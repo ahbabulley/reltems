@@ -24,7 +24,7 @@
             display: inline-block; 
             white-space: nowrap; 
             position: absolute;
-            animation: marquee 20s linear infinite; 
+            animation: marquee 25s linear infinite; 
             font-size: 11px; 
             font-weight: 700; 
             color: var(--sub-text); 
@@ -42,9 +42,20 @@
         .theme-box { background: var(--bg); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         #nav-popup-menu { backdrop-filter: blur(10px); background: rgba(22, 27, 34, 0.95); box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
         .search-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; font-size: 11px; outline: none; width: 220px; }
+        
+        #voice-overlay { position: fixed; inset: 0; background: rgba(13, 17, 23, 0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
     </style>
 </head>
 <body class="dark-mode">
+
+    <div id="voice-overlay">
+        <h1 class="text-blue-500 font-rowx text-2xl animate-pulse">PHEI SYSTEM 2026</h1>
+        <button onclick="enableSystem()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95">
+            AKTIFKAN MONITORING & SUARA
+        </button>
+        <p class="text-[10px] text-gray-500">Wajib diklik agar notifikasi & suara Google aktif</p>
+    </div>
+
     <div class="flex flex-col h-screen relative">
         <nav>
             <div class="logo-area flex flex-col shrink-0">
@@ -67,11 +78,21 @@
 
         <main class="flex-1 overflow-y-auto">
             <div class="p-4 border-b border-[var(--border)] bg-[var(--card)]/30 flex justify-between items-center">
-                <h2 id="view-title" class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.3em]">🚀 REALTIME LEADS</h2>
-                <div id="search-container" class="hidden">
-                    <input type="text" id="clickSearch" class="search-input" placeholder="Cari ID / Negara..." onkeyup="filterClicks()">
+                <div class="flex items-center gap-4">
+                    <h2 id="view-title" class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.3em]">🚀 REALTIME LEADS</h2>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <div id="search-container" class="hidden">
+                        <input type="text" id="clickSearch" class="search-input" placeholder="Cari ID / Negara..." onkeyup="filterClicks()">
+                    </div>
+                    <div class="bg-green-500/10 border border-green-500/20 px-4 py-1.5 rounded-lg flex flex-col items-end">
+                        <span class="text-[8px] font-bold text-green-500/60 uppercase tracking-widest">Today's Earnings</span>
+                        <span id="total-earnings" class="text-sm font-bold text-green-500 font-mono">$0.00</span>
+                    </div>
                 </div>
             </div>
+
             <table id="data-table">
                 <thead id="table-head"></thead>
                 <tbody id="main-table-body"></tbody>
@@ -80,18 +101,27 @@
     </div>
 
 <script>
-// 1. VARIABLE GLOBAL
 const mainTable = document.getElementById('main-table-body');
 const tableHead = document.getElementById('table-head');
+const totalEarningsEl = document.getElementById('total-earnings');
 const synth = window.speechSynthesis;
 let leadsData = [];
 let clicksData = [];
 let currentView = 'live';
+let isSystemEnabled = false;
 
 const crownSvg = `<svg class="w-5 h-5 text-yellow-500 animate-bounce" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 const userSvg = `<svg class="w-5 h-5 opacity-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
-// 2. FUNGSI HELPER
+function enableSystem() {
+    isSystemEnabled = true;
+    document.getElementById('voice-overlay').style.display = 'none';
+    if (Notification.permission !== 'granted') Notification.requestPermission();
+    const speak = new SpeechSynthesisUtterance("Sistem Monitoring Aktif");
+    speak.lang = 'id-ID';
+    synth.speak(speak);
+}
+
 function getFlag(country) {
     if (!country) return 'id'; 
     let code = country.toLowerCase();
@@ -107,7 +137,6 @@ function sendSystemNotif(payout, clickId) {
     }
 }
 
-// 3. UI CONTROLLER
 function openMenuPopup() {
     const existing = document.getElementById('nav-popup-menu');
     if (existing) { existing.remove(); return; }
@@ -137,56 +166,47 @@ function updateDisplay() {
     mainTable.innerHTML = "";
     let kingId = "";
     let topVal = 0;
+    let grandTotal = 0;
+
+    const perfMap = {};
+    leadsData.forEach(l => {
+        const p = parseFloat(l.payout);
+        grandTotal += p; // Hitung total penghasilan keseluruhan
+        if(!perfMap[l.click_id]) perfMap[l.click_id] = {...l, total:0, count:0};
+        perfMap[l.click_id].total += p;
+        perfMap[l.click_id].count++;
+    });
+
+    // Update Angka di Pojok Kanan
+    totalEarningsEl.innerText = `$${grandTotal.toFixed(2)}`;
+
+    const sortedPerf = Object.values(perfMap).sort((a,b) => b.total - a.total);
+    if(sortedPerf.length > 0) {
+        kingId = sortedPerf[0].click_id;
+        topVal = sortedPerf[0].total;
+    }
 
     if (currentView === 'live' || currentView === 'perf') {
         tableHead.innerHTML = `<tr><th width="20%">USER</th><th width="35%">CLICK ID</th><th width="15%">COUNTRY</th><th width="15%" class="text-center">INFO</th><th width="15%" class="text-right">PAYOUT</th></tr>`;
-        let renderData = [];
-        
-        if(currentView === 'live') {
-            renderData = leadsData;
-            leadsData.forEach(l => { if(parseFloat(l.payout) >= topVal) { topVal = parseFloat(l.payout); kingId = l.click_id; } });
-        } else {
-            const perfMap = {};
-            leadsData.forEach(l => {
-                if(!perfMap[l.click_id]) perfMap[l.click_id] = {...l, total:0, count:0};
-                perfMap[l.click_id].total += parseFloat(l.payout);
-                perfMap[l.click_id].count++;
-            });
-            renderData = Object.values(perfMap).sort((a,b) => b.total - a.total);
-            if(renderData[0]) { kingId = renderData[0].click_id; topVal = renderData[0].total; }
-        }
+        let renderData = (currentView === 'live') ? leadsData : sortedPerf;
 
         renderData.forEach(d => {
             const isKing = d.click_id === kingId && kingId !== "";
             const pValue = currentView === 'perf' ? d.total : parseFloat(d.payout);
             const row = mainTable.insertRow();
-            
-            // Ikon hanya muncul di view Performance
             let iconHtml = (currentView === 'perf') ? (isKing ? crownSvg : userSvg) : "";
 
             row.innerHTML = `
-                <td class="p-4">
-                    <div class="flex items-center gap-2">
-                        ${iconHtml}
-                        <span class="font-bold ${isKing && currentView === 'perf' ? 'text-yellow-500' : 'text-blue-500'} uppercase">${d.oid||'USR'}</span>
-                    </div>
-                </td>
+                <td class="p-4"><div class="flex items-center gap-2">${iconHtml}<span class="font-bold ${isKing && currentView === 'perf' ? 'text-yellow-500' : 'text-blue-500'} uppercase">${d.oid||'USR'}</span></div></td>
                 <td class="font-mono text-xs opacity-50 truncate">${d.click_id}</td>
-                <td>
-                    <div class="flex items-center gap-2">
-                        <img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow">
-                        <span class="text-[10px] font-bold uppercase">${d.country||'ID'}</span>
-                    </div>
-                </td>
-                <td class="text-center text-[10px] opacity-50">
-                    ${currentView==='perf' ? d.count+' LEADS' : new Date(d.timestamp).toLocaleTimeString()}
-                </td>
+                <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow"><span class="text-[10px] font-bold uppercase">${d.country||'ID'}</span></div></td>
+                <td class="text-center text-[10px] opacity-50">${currentView==='perf' ? d.count+' LEADS' : new Date(d.timestamp).toLocaleTimeString()}</td>
                 <td class="text-right font-bold text-green-500">$${pValue.toFixed(2)}</td>
             `;
         });
         
         const m = document.getElementById('marquee-text');
-        if(m && kingId) m.innerHTML = `🏆 TOP RECORD: <span class="text-yellow-500">${kingId}</span> // VALUE: <span class="text-green-500">$${topVal.toFixed(2)}</span> // STATUS: SECURE & CONNECTED // NODE: ASIA-1`;
+        if(m && kingId) m.innerHTML = `🏆 TOP RECORD: <span class="text-yellow-500">${kingId}</span> // TOTAL PAYOUT: <span class="text-green-500">$${topVal.toFixed(2)}</span> // STATUS: SECURE & CONNECTED`;
     } else {
         tableHead.innerHTML = `<tr><th width="40%">CLICK ID</th><th width="20%">COUNTRY</th><th width="20%">STATUS</th><th width="20%" class="text-right">TIME</th></tr>`;
         filterClicks();
@@ -210,14 +230,12 @@ function handleData(data, type, isNew = false) {
         leadsData.unshift(data);
         if (leadsData.length > 500) leadsData.pop();
         updateDisplay(); 
-        
-        if (isNew) {
+        if (isNew && isSystemEnabled) {
             sendSystemNotif(data.payout, data.click_id);
             synth.cancel();
-            const utter = new SpeechSynthesisUtterance(`Lead ${data.payout} dolar.`);
+            const utter = new SpeechSynthesisUtterance(`Lead ${data.payout} dolar masuk.`);
             utter.lang = 'id-ID';
             synth.speak(utter);
-
             const botToken = "8294616704:AAF7M8RQkNKdkJeNvVdeGFG7zrU26vo7sao";
             const chatId = "-1002258281914";
             fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🔥 *LEAD MASUK!* 🔥\n\n🆔 ID: `' + data.click_id + '` \n💰 Payout: $' + data.payout)}&parse_mode=Markdown`).catch(e => {});
@@ -235,11 +253,10 @@ function toggleTheme() {
     document.getElementById('moon-icon').classList.toggle('hidden', !isLight);
 }
 
-// Reset Otomatis Jam 7 Pagi
 setInterval(() => {
     const now = new Date();
     if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
-        leadsData = []; clicksData = []; mainTable.innerHTML = "";
+        leadsData = []; clicksData = []; updateDisplay();
     }
 }, 1000);
 
@@ -260,7 +277,6 @@ channel.bind('new-click', d => handleData(typeof d === 'string' ? JSON.parse(d) 
 
 autoSync();
 setInterval(autoSync, 10000);
-document.addEventListener('click', () => { if(Notification.permission!=='granted') Notification.requestPermission(); }, {once:true});
 </script>
 </body>
 </html>
