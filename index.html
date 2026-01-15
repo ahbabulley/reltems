@@ -100,31 +100,32 @@ function initPermissions() {
     if (Notification.permission !== "granted") Notification.requestPermission();
 }
 
+// Fungsi Suara Google (Membaca Click ID)
 function announceLead(clickId, payout) {
-    synth.cancel(); 
-    const spelledId = clickId.substring(0, 5).split('').join(' ');
-    const utter = new SpeechSynthesisUtterance(`Lead baru. ID. ${spelledId}. Payout ${payout} dolar.`);
+    synth.cancel(); // Potong suara lama biar gak antre
+    
+    // Eja ID agar jelas: A B 1 2 dst.
+    const spelledId = clickId.substring(0, 6).split('').join(' ');
+    const utter = new SpeechSynthesisUtterance(`Lead baru. Klik I D. ${spelledId}. Payout ${payout} dolar.`);
     utter.lang = 'id-ID';
     utter.rate = 1.0; 
     synth.speak(utter);
 
     if (Notification.permission === "granted") {
-        const n = new Notification("LEAD BARU: " + clickId, {
+        new Notification("LEAD BARU: " + clickId, {
             body: `ID: ${clickId}\nPayout: $${payout}`,
             icon: 'https://cdn-icons-png.flaticon.com/512/1162/1162250.png'
         });
-        setTimeout(() => n.close(), 8000);
     }
 }
 
-// 2. SVG Icons Dinamis (Warna ikut teks)
+// 2. SVG Icons Dinamis (Warna Putih di Gelap, Hitam di Terang)
 const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
-const userSvg = `<svg class="w-6 h-6 opacity-60" style="color: var(--text)" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
+const userSvg = `<svg class="w-6 h-6" style="color: var(--text); opacity: 0.7;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
 // 3. Update Tabel Utama
 function updateTable() {
-    if (!leadsData.length) return;
-    const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)));
+    const maxPayout = leadsData.length > 0 ? Math.max(...leadsData.map(l => parseFloat(l.payout))) : 0;
     mainTable.innerHTML = "";
     leadsData.forEach((data) => {
         const isKing = parseFloat(data.payout) === maxPayout && maxPayout > 0;
@@ -140,17 +141,16 @@ function updateTable() {
     });
 }
 
-// 4. Logika Handle Data
+// 4. Logika Handle Data (SATSET)
 function handleData(data, type, isNew = false) {
     if (type === 'LEAD') {
-        const isExist = leadsData.some(l => l.click_id === data.click_id);
-        if (!isExist) {
-            leadsData.unshift(data);
-            if (leadsData.length > 50) leadsData.pop();
-            updateTable();
-            if (isNew) announceLead(data.click_id, data.payout);
-        }
+        // FILTER DUPLIKAT DIHAPUS agar bisa tes berulang-ulang dengan data yang sama
+        leadsData.unshift(data);
+        if (leadsData.length > 50) leadsData.pop();
+        updateTable();
+        if (isNew) announceLead(data.click_id, data.payout);
     } else if (type === 'CLICK') {
+        // Click tetap pakai filter ID agar sidebar tidak berantakan
         if (!processedClickIds.has(data.click_id)) {
             processedClickIds.add(data.click_id);
             const countryCode = (data.country || 'ID').toUpperCase();
@@ -165,38 +165,36 @@ function handleData(data, type, isNew = false) {
                     <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-5 shadow">
                     <span class="text-[9px] font-bold opacity-50">${countryCode}</span>
                 </div>`;
-            
             stream.prepend(item);
-            const boxes = stream.querySelectorAll('.type-CLICK');
-            if (boxes.length > 5) {
-                const lastId = boxes[boxes.length-1].querySelector('.font-mono').innerText;
-                processedClickIds.delete(lastId);
-                stream.removeChild(boxes[boxes.length-1]);
-            }
+            if (stream.children.length > 5) stream.lastChild.remove();
         }
     }
 }
 
-// 5. AUTO RELOAD SINKRON (Tiap 2 Detik) - NO DRAMA
+// 5. AUTO SYNC (Backup tiap 2 detik)
 async function autoSync() {
     try {
         const [resL, resC] = await Promise.all([
-            fetch('/get-history?nocache=' + Date.now()),
-            fetch('/get-clicks?nocache=' + Date.now())
+            fetch('/get-history?t=' + Date.now()),
+            fetch('/get-clicks?t=' + Date.now())
         ]);
         const leads = await resL.json();
         const clicks = await resC.json();
-        if (Array.isArray(leads)) [...leads].reverse().forEach(l => handleData(l, 'LEAD', false));
-        if (Array.isArray(clicks)) [...clicks].reverse().forEach(c => handleData(c, 'CLICK', false));
+        // Saat sync, jangan bunyikan suara (isNew = false) agar tidak berisik saat loading awal
+        if (Array.isArray(leads)) {
+            leadsData = leads.slice(0, 50);
+            updateTable();
+        }
+        if (Array.isArray(clicks)) clicks.reverse().forEach(c => handleData(c, 'CLICK', false));
     } catch (e) {}
 }
 
-// Start System
+// Inisialisasi
 initPermissions();
 autoSync();
-setInterval(autoSync, 2000); // REFRESH DATA TIAP 2 DETIK
+setInterval(autoSync, 2000); // Sinkronisasi database tiap 2 detik
 
-// Pusher (INSTANT)
+// Pusher (Realtime - Satset)
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
 channel.bind('new-lead', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'LEAD', true));
@@ -210,7 +208,11 @@ function toggleTheme() {
     document.getElementById('moon-icon').classList.toggle('hidden', !isL);
 }
 
-document.addEventListener('click', () => { synth.speak(new SpeechSynthesisUtterance("")); initPermissions(); }, {once: true});
+// Pancing izin Browser
+document.addEventListener('click', () => { 
+    synth.speak(new SpeechSynthesisUtterance("")); 
+    initPermissions(); 
+}, {once: true});
 </script>
 </body>
 </html>
