@@ -14,27 +14,27 @@
         :root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --sub-text: #8b949e; --accent: #3b82f6; }
         .light-mode { --bg: #ffffff; --card: #f6f8fa; --text: #24292f; --border: #d0d7de; --sub-text: #57606a; --accent: #2563eb; }
         
-        body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); overflow: hidden; transition: 0.3s; }
+        body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); overflow: hidden; transition: 0.3s; margin: 0; }
         .font-rowx { font-family: 'Orbitron', sans-serif; }
         
-        nav { display: flex; align-items: center; padding: 0 24px; height: 75px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+        nav { display: flex; align-items: center; padding: 0 24px; height: 75px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; justify-content: space-between; }
         
-        .marquee-container { flex: 1; height: 100%; overflow: hidden; margin: 0 20px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); display: flex; align-items: center; position: relative; }
+        /* FIX KEDORONG: Menambahkan min-width 0 dan overflow hidden */
+        .marquee-container { flex: 1; height: 100%; overflow: hidden; margin: 0 20px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); display: flex; align-items: center; position: relative; min-width: 0; }
         .marquee-text { display: inline-block; white-space: nowrap; position: absolute; animation: marquee 25s linear infinite; font-size: 11px; font-weight: 700; color: var(--sub-text); padding-left: 100%; }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
         th { background: var(--card); color: var(--sub-text); font-size: 10px; padding: 12px 24px; border-bottom: 2px solid var(--border); text-align: left; text-transform: uppercase; }
         td { padding: 12px 24px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text); transition: color 0.3s; }
         
-        /* HAMBURGER TO X ANIMATION */
-        .menu-btn { position: relative; width: 30px; height: 20px; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; }
+        .menu-btn { position: relative; width: 30px; height: 20px; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; shrink-0; }
         .menu-btn span { display: block; width: 100%; height: 3px; background: var(--text); border-radius: 3px; transition: 0.3s; }
         .menu-btn.active span:nth-child(1) { transform: translateY(8.5px) rotate(45deg); }
         .menu-btn.active span:nth-child(2) { opacity: 0; }
         .menu-btn.active span:nth-child(3) { transform: translateY(-8.5px) rotate(-45deg); }
 
         #nav-popup-menu { background: var(--card); border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 12px; }
-        .theme-box { background: var(--bg); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); }
+        .theme-box { background: var(--bg); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); shrink-0; }
     </style>
 </head>
 <body class="dark-mode">
@@ -43,15 +43,15 @@
         <nav>
             <div class="logo-area flex flex-col shrink-0">
                 <span class="text-2xl font-bold font-rowx text-blue-500">R.O.W.X</span>
-                <span class="text-[7px] font-bold tracking-[0.2em] opacity-40">PHEI EDITION 2026</span>
+                <span class="text-[7px] font-bold tracking-[0.2em] opacity-40 uppercase">PHEI EDITION 2026</span>
             </div>
             <div class="marquee-container">
                 <div class="marquee-text uppercase" id="marquee-text">SYSTEM READY // NODE ASIA-1 // SECURE CONNECTED</div>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 shrink-0">
                 <div class="theme-box" onclick="toggleTheme()">
-                    <svg id="sun-icon" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5 block"><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/></svg>
-                    <svg id="moon-icon" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5 hidden"><path d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2h.1A6.979 6.979 0 0 0 10 7z"/></svg>
+                    <svg id="sun-icon" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 block"><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/></svg>
+                    <svg id="moon-icon" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 hidden"><path d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2h.1A6.979 6.979 0 0 0 10 7z"/></svg>
                 </div>
                 <div id="menu-trigger" class="menu-btn" onclick="toggleMenu()">
                     <span></span><span></span><span></span>
@@ -62,6 +62,7 @@
         <main class="flex-1 overflow-y-auto">
             <div class="p-4 border-b border-[var(--border)] bg-[var(--card)]/30 flex justify-between items-center">
                 <div class="flex items-center gap-2" id="view-header-icon">
+                    <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                     <h2 id="view-title" class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.3em]">REALTIME LEADS</h2>
                 </div>
                 
@@ -98,11 +99,11 @@ let leadsData = [];
 let clicksData = [];
 let currentView = 'live';
 
-// SOLID SVG ASSETS
+// SOLID SVG ASSETS - DIPERTABAL (STROKE-WIDTH DITAMBAH PADA PATH)
 const svgIcons = {
-    bolt: `<svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`,
-    chart: `<svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M3 13h1v7H3v-7zm5-4h1v11H8V9zm5-5h1v16h-1V4zm5 8h1v8h-1v-8z"/></svg>`,
-    signal: `<svg class="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6 14h3v6H6v-6zm5-4h3v10h-3V10zm5-4h3v14h-3V6zM1 18h3v2H1v-2z"/></svg>`,
+    bolt: `<svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`,
+    chart: `<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M3 13h2.5v7H3v-7zm6.25-4h2.5v11h-2.5V9zm6.25-5h2.5v16h-2.5V4z"/></svg>`,
+    signal: `<svg class="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24"><path d="M3 16h3.5v4H3v-4zm5.5-4h3.5v8h-3.5v-8zm5.5-4h3.5v12H14V8zm5.5-4H23v16h-3.5V4z"/></svg>`,
     crown: `<svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`,
     fire: `<svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.66 11.5c-.21-.07-.43-.14-.65-.21a9.2 9.2 0 00-1.12-.33c-.44-.09-.9-.14-1.39-.14-2.12 0-3.9 1.25-4.66 3.05a5.5 5.5 0 01-.13-1.05c0-2.43 1.45-4.52 3.53-5.46a.5.5 0 00.22-.68c-.16-.31-.41-.57-.71-.73a5.52 5.52 0 00-5.74.45c-.21.15-.41.32-.6.5a9.54 9.54 0 00-2.4 4.14 9.54 9.54 0 001.32 8.42c1.47 2.12 3.91 3.53 6.69 3.53 4.42 0 8-3.58 8-8 0-1.47-.4-2.84-1.08-4.01z"/></svg>`
 };
@@ -178,14 +179,14 @@ function updateDisplay() {
         tableHead.innerHTML = `<tr><th width="20%">USER</th><th width="35%">CLICK ID</th><th width="15%">COUNTRY</th><th width="15%" class="text-center">TIME</th><th width="15%" class="text-right">PAYOUT</th></tr>`;
         leadsData.forEach(d => {
             const row = mainTable.insertRow();
-            row.innerHTML = `<td class="p-4 font-bold text-blue-500 uppercase">${d.oid||'USR'}</td><td class="font-mono text-xs text-[var(--text)] opacity-60 truncate">${d.click_id}</td><td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow"><span class="text-sm font-bold uppercase">${d.country||'ID'}</span></div></td><td class="text-center text-[10px] opacity-50">${new Date(d.timestamp).toLocaleTimeString()}</td><td class="text-right font-bold text-green-500">$${parseFloat(d.payout).toFixed(2)}</td>`;
+            row.innerHTML = `<td class="p-4 font-bold text-blue-500 uppercase">${d.oid||'USR'}</td><td class="font-mono text-xs text-[var(--text)] opacity-70 truncate">${d.click_id}</td><td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow"><span class="text-sm font-bold uppercase">${d.country||'ID'}</span></div></td><td class="text-center text-[10px] opacity-50">${new Date(d.timestamp).toLocaleTimeString()}</td><td class="text-right font-bold text-green-500">$${parseFloat(d.payout).toFixed(2)}</td>`;
         });
     } else if (currentView === 'perf') {
         tableHead.innerHTML = `<tr><th width="50%">CLICK ID</th><th width="25%" class="text-center">INFO</th><th width="25%" class="text-right">PAYOUT</th></tr>`;
         sortedPerf.forEach(d => {
             const isKing = d.click_id === kingId;
             const row = mainTable.insertRow();
-            row.innerHTML = `<td class="p-4"><div class="flex items-center gap-3">${isKing ? svgIcons.crown : '<div class="w-5"></div>'}<span class="font-mono text-xs ${isKing ? 'text-yellow-500 font-bold' : 'text-[var(--text)] opacity-60'}">${d.click_id}</span></div></td><td class="text-center text-[10px] font-bold uppercase">${d.count} LEADS</td><td class="text-right font-bold text-green-500">$${d.total.toFixed(2)}</td>`;
+            row.innerHTML = `<td class="p-4"><div class="flex items-center gap-3">${isKing ? svgIcons.crown : '<div class="w-5"></div>'}<span class="font-mono text-xs ${isKing ? 'text-yellow-500 font-bold' : 'text-[var(--text)] opacity-70'}">${d.click_id}</span></div></td><td class="text-center text-[10px] font-bold uppercase">${d.count} LEADS</td><td class="text-right font-bold text-green-500">$${d.total.toFixed(2)}</td>`;
         });
     } else {
         tableHead.innerHTML = `<tr><th width="40%">CLICK ID</th><th width="20%">COUNTRY</th><th width="20%">STATUS</th><th width="20%" class="text-right">TIME</th></tr>`;
