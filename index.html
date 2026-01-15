@@ -31,19 +31,19 @@
         th { background: var(--card); color: var(--sub-text); font-size: 10px; padding: 12px 24px; border-bottom: 2px solid var(--border); text-align: left; text-transform: uppercase; letter-spacing: 1px; }
         td { padding: 12px 24px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text); }
         
-        .theme-box { background: var(--card); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        #nav-popup-menu { backdrop-filter: blur(10px); background: rgba(22, 27, 34, 0.95); box-shadow: 0 10px 40px rgba(0,0,0,0.6); color: white; }
+        .theme-box { background: var(--card); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); }
+        #nav-popup-menu { backdrop-filter: blur(15px); background: rgba(22, 27, 34, 0.9); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         .search-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; font-size: 11px; outline: none; width: 220px; }
         
         /* LOGIN OVERLAY */
         #login-overlay { 
-            position: fixed; inset: 0; background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); 
+            position: fixed; inset: 0; background: radial-gradient(circle at center, #1e293b 0%, #0d1117 100%); 
             z-index: 9999; display: flex; align-items: center; justify-content: center; 
         }
         .login-card { 
             background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); 
             border: 1px solid rgba(255, 255, 255, 0.1); padding: 40px; border-radius: 24px;
-            width: 100%; max-width: 400px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            width: 100%; max-width: 400px; text-align: center;
         }
     </style>
 </head>
@@ -60,10 +60,10 @@
                     class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-4 text-center text-white tracking-[0.5em] focus:border-blue-500 outline-none transition-all">
                 <button onclick="checkAuth()" 
                     class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95">
-                    LOGIN & ACTIVATE
+                    LOGIN & MONITORING
                 </button>
             </div>
-            <p id="login-err" class="text-red-500 text-[10px] mt-4 font-bold opacity-0 transition-opacity">WRONG ACCESS KEY</p>
+            <p id="login-err" class="text-red-500 text-[10px] mt-4 font-bold opacity-0 transition-opacity uppercase">Akses Ditolak!</p>
         </div>
     </div>
 
@@ -78,11 +78,11 @@
             </div>
             <div class="flex items-center gap-4">
                 <div class="theme-box" onclick="toggleTheme()">
-                    <svg id="sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 block"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2"></path></svg>
-                    <svg id="moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 hidden"><path d="M21.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-width="2"></path></svg>
+                    <svg id="sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 block"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2" stroke-linecap="round"></path></svg>
+                    <svg id="moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 hidden"><path d="M21.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-width="2" stroke-linecap="round"></path></svg>
                 </div>
-                <button onclick="openMenuPopup()" class="text-gray-400 hover:text-white transition-all active:scale-90">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                <button onclick="openMenuPopup()" class="text-gray-400 hover:text-blue-500 transition-all active:scale-90">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                 </button>
             </div>
         </nav>
@@ -90,14 +90,9 @@
         <main class="flex-1 overflow-y-auto">
             <div class="p-4 border-b border-[var(--border)] bg-[var(--card)]/30 flex justify-between items-center">
                 <h2 id="view-title" class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.3em]">🚀 REALTIME LEADS</h2>
-                <div class="flex items-center gap-3">
-                    <div id="search-container" class="hidden">
-                        <input type="text" id="clickSearch" class="search-input" placeholder="Cari ID / Negara..." onkeyup="filterClicks()">
-                    </div>
-                    <div class="bg-green-500/10 border border-green-500/20 px-4 py-1.5 rounded-lg flex flex-col items-end">
-                        <span class="text-[8px] font-bold text-green-500/60 uppercase tracking-widest">Today's Earnings</span>
-                        <span id="total-earnings" class="text-sm font-bold text-green-500 font-mono">$0.00</span>
-                    </div>
+                <div class="bg-green-500/10 border border-green-500/20 px-4 py-1.5 rounded-lg flex flex-col items-end">
+                    <span class="text-[8px] font-bold text-green-500/60 uppercase tracking-widest">Today's Earnings</span>
+                    <span id="total-earnings" class="text-sm font-bold text-green-500 font-mono">$0.00</span>
                 </div>
             </div>
             <table id="data-table">
@@ -117,20 +112,18 @@ let clicksData = [];
 let currentView = 'live';
 let isAuth = false;
 
-// Mahkota Tanpa Animasi
+// Mahkota Statis
 const crownSvg = `<svg class="w-5 h-5 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 
 function checkAuth() {
-    const pass = document.getElementById('passInput').value;
-    if(pass === 'phei2026') {
+    if(document.getElementById('passInput').value === 'phei2026') {
         isAuth = true;
         document.getElementById('login-overlay').style.display = 'none';
         if (Notification.permission !== 'granted') Notification.requestPermission();
         
-        // Suara Selamat Datang AI
+        // Suara AI Halus
         const welcome = new SpeechSynthesisUtterance("Selamat datang kembali, Master. Sistem monitoring telah diaktifkan.");
         welcome.lang = 'id-ID';
-        welcome.pitch = 1.1;
         welcome.rate = 0.9;
         synth.speak(welcome);
     } else {
@@ -170,19 +163,18 @@ function updateDisplay() {
     }
 
     if (currentView === 'live') {
-        tableHead.innerHTML = `<tr><th width="20%">USER</th><th width="35%">CLICK ID</th><th width="15%">COUNTRY</th><th width="15%" class="text-center">INFO</th><th width="15%" class="text-right">PAYOUT</th></tr>`;
+        tableHead.innerHTML = `<tr><th width="20%">USER</th><th width="35%">CLICK ID</th><th width="15%">COUNTRY</th><th width="15%" class="text-center">TIME</th><th width="15%" class="text-right">PAYOUT</th></tr>`;
         leadsData.forEach(d => {
             const row = mainTable.insertRow();
             row.innerHTML = `
-                <td class="p-4"><span class="font-bold text-blue-500 uppercase">${d.oid||'USR'}</span></td>
+                <td class="p-4 font-bold text-blue-500 uppercase">${d.oid||'USR'}</td>
                 <td class="font-mono text-xs opacity-50 truncate">${d.click_id}</td>
-                <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow"><span class="text-[12px] font-bold uppercase">${d.country||'ID'}</span></div></td>
+                <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-6 shadow"><span class="text-[12px] font-bold uppercase">${d.country||'ID'}</span></div></td>
                 <td class="text-center text-[10px] opacity-50">${new Date(d.timestamp).toLocaleTimeString()}</td>
                 <td class="text-right font-bold text-green-500">$${parseFloat(d.payout).toFixed(2)}</td>
             `;
         });
     } else if (currentView === 'perf') {
-        // TAMPILAN PERFORMANCE RINGKAS
         tableHead.innerHTML = `<tr><th width="50%">CLICK ID</th><th width="25%" class="text-center">INFO</th><th width="25%" class="text-right">PAYOUT</th></tr>`;
         sortedPerf.forEach(d => {
             const isKing = d.click_id === kingId;
@@ -194,17 +186,14 @@ function updateDisplay() {
                         <span class="font-mono text-xs ${isKing ? 'text-yellow-500 font-bold' : 'opacity-70'}">${d.click_id}</span>
                     </div>
                 </td>
-                <td class="text-center text-[10px] font-bold">${d.count} LEADS</td>
+                <td class="text-center text-[10px] font-bold uppercase">${d.count} Leads</td>
                 <td class="text-right font-bold text-green-500">$${d.total.toFixed(2)}</td>
             `;
         });
-    } else {
-        tableHead.innerHTML = `<tr><th width="40%">CLICK ID</th><th width="20%">COUNTRY</th><th width="20%">STATUS</th><th width="20%" class="text-right">TIME</th></tr>`;
-        filterClicks();
     }
 
     const m = document.getElementById('marquee-text');
-    if(m && kingId) m.innerHTML = `🏆 TOP RECORD: <span class="text-yellow-500">${kingId}</span> // TOTAL PAYOUT: <span class="text-green-500">$${topVal.toFixed(2)}</span> // STATUS: SECURE`;
+    if(m && kingId) m.innerHTML = `🏆 TOP: <span class="text-yellow-500">${kingId}</span> // EARNING: <span class="text-green-500">$${topVal.toFixed(2)}</span> // NODE ASIA-1 // STATUS: SECURE`;
 }
 
 function handleData(data, type, isNew = false) {
@@ -219,10 +208,6 @@ function handleData(data, type, isNew = false) {
             utter.lang = 'id-ID';
             synth.speak(utter);
         }
-    } else {
-        clicksData.unshift(data);
-        if (clicksData.length > 200) clicksData.pop();
-        if(currentView === 'traffic') updateDisplay();
     }
 }
 
@@ -237,11 +222,10 @@ function openMenuPopup() {
     if (existing) { existing.remove(); return; }
     const menu = document.createElement('div');
     menu.id = 'nav-popup-menu';
-    menu.className = "fixed top-16 right-4 w-56 border border-[var(--border)] rounded-xl z-[999] p-2 flex flex-col gap-1 shadow-2xl";
+    menu.className = "fixed top-16 right-4 w-56 z-[999] p-2 flex flex-col gap-1";
     menu.innerHTML = `
-        <button onclick="switchView('live')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-500/10 w-full text-left"><span class="font-bold text-[10px] uppercase">Realtime Leads</span></button>
-        <button onclick="switchView('perf')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-green-500/10 w-full text-left"><span class="font-bold text-[10px] uppercase">Performance</span></button>
-        <button onclick="switchView('traffic')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-purple-500/10 w-full text-left"><span class="font-bold text-[10px] uppercase">Live Traffic</span></button>
+        <button onclick="switchView('live')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-500/20 w-full text-left"><span class="font-bold text-[10px] uppercase text-blue-500">Realtime Leads</span></button>
+        <button onclick="switchView('perf')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-green-500/20 w-full text-left"><span class="font-bold text-[10px] uppercase text-green-500">Performance</span></button>
     `;
     document.body.appendChild(menu);
     setTimeout(() => document.addEventListener('click', (e) => { if(!menu.contains(e.target)) menu.remove(); }, {once:true, capture:true}), 10);
@@ -249,20 +233,15 @@ function openMenuPopup() {
 
 function switchView(view) {
     currentView = view;
-    document.getElementById('search-container').classList.toggle('hidden', view !== 'traffic');
-    const title = document.getElementById('view-title');
-    if(view === 'live') title.innerText = "🚀 REALTIME LEADS";
-    else if(view === 'perf') title.innerText = "🏆 PERFORMANCE";
-    else title.innerText = "📡 LIVE TRAFFIC (CLICKS)";
+    document.getElementById('view-title').innerText = view === 'live' ? "🚀 REALTIME LEADS" : "🏆 PERFORMANCE";
     updateDisplay();
 }
 
+// Pusher & Auto Sync (Disesuaikan dengan backend Anda)
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
 channel.bind('new-lead', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'LEAD', true));
-channel.bind('new-click', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'CLICK', false));
 
-// Reset Jam 7 Pagi
 setInterval(() => {
     const now = new Date();
     if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
