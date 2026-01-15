@@ -14,7 +14,7 @@
         body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); overflow: hidden; transition: 0.3s; }
         .font-rowx { font-family: 'Orbitron', sans-serif; }
         nav { display: flex; align-items: center; padding: 0 24px; height: 75px; background: var(--card); border-bottom: 1px solid var(--border); }
-        .logo-area { display: flex; flex-direction: column; line-height: 1; shrink-0; }
+        .logo-area { display: flex; flex-direction: column; line-height: 1; flex-shrink: 0; }
         .phei-text { font-family: 'Orbitron', sans-serif; font-size: 7px; letter-spacing: 0.12em; color: rgba(139, 148, 158, 0.4); font-weight: 700; margin-top: 5px; }
         .marquee-container { flex: 1; height: 100%; overflow: hidden; margin: 0 20px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); display: flex; align-items: center; white-space: nowrap; }
         .marquee-text { display: inline-block; animation: marquee 25s linear infinite; font-size: 11px; font-weight: 700; color: var(--sub-text); }
@@ -22,224 +22,229 @@
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th { background: var(--card); color: var(--sub-text); font-size: 11px; padding: 14px 24px; border-bottom: 2px solid var(--border); text-align: left; }
         td { padding: 14px 24px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; }
-        .theme-box { background: var(--bg); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; shrink-0; }
-/* Cari dan ganti bagian ini di index.html */
-#sidebar { 
-    position: absolute; 
-    right: 24px; 
-    top: -100vh; /* Sembunyi jauh di atas */
-    width: 350px; 
-    /* Hapus height tetap (78vh), biarkan mengikuti konten */
-    background: var(--card); 
-    border: 1px solid var(--border); 
-    z-index: 100; 
-    border-radius: 0 0 15px 15px; 
-    transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); 
-    display: flex; 
-    flex-direction: column; 
-    box-shadow: 0 20px 50px rgba(0,0,0,0.4); 
-    max-height: 85vh; /* Batas maksimal agar tidak tembus layar bawah */
-}
-
-#sidebar.open { 
-    top: 75px; 
-}
-
-/* Pastikan area stream tidak memaksa tinggi tertentu */
-#activity-stream { 
-    overflow-y: auto; 
-    padding: 16px; 
-    display: flex;
-    flex-direction: column;
-    gap: 8px; /* Jarak antar kotak agar rapi */
-}
+        .theme-box { background: var(--bg); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        
+        #sidebar { position: absolute; right: 24px; top: -100vh; width: 350px; background: var(--card); border: 1px solid var(--border); z-index: 100; border-radius: 0 0 15px 15px; transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.4); max-height: 85vh; }
+        #sidebar.open { top: 75px; }
+        #activity-stream { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+        
         .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
-        .dot-red { background: #ff4444; } .dot-yellow { background: #ffbb33; animation-delay: 0.3s; } .dot-green { background: #00c851; animation-delay: 0.6s; }
+        .dot-red { background: #ff4444; } .dot-yellow { background: #ffbb33; } .dot-green { background: #00c851; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         .row-animate { animation: rowIn 1.2s ease-out; }
         @keyframes rowIn { from { background: rgba(59, 130, 246, 0.25); } to { background: transparent; } }
+
+        /* Popup Nav Style */
+        #nav-popup-menu { box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(8px); }
     </style>
 </head>
 <body class="dark-mode">
-    <audio id="leadSound" src="https://kokoya.pages.dev/kaya.mp3" preload="auto"></audio>
     <div class="flex flex-col h-screen relative">
         <nav>
             <div class="logo-area">
                 <span class="text-2xl font-bold font-rowx text-blue-500">R.O.W.X</span>
                 <span class="phei-text">PHEI EDITION 2026</span>
             </div>
-            <div class="marquee-container"><div class="marquee-text uppercase">NODE: ASIA-1 // STATUS: SECURE // EDITION: PHEI 2026 // LIVE MONITORING...</div></div>
+            <div class="marquee-container"><div class="marquee-text uppercase" id="marquee-text">WAITING FOR NETWORK...</div></div>
             <div class="flex items-center gap-4">
-                <div class="theme-box"><button onclick="toggleTheme()" class="w-full h-full flex items-center justify-center text-gray-400 hover:text-blue-500"><svg id="sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 block"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2"></path></svg><svg id="moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 hidden"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-width="2"></path></svg></button></div>
-                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg></button>
+                <div class="theme-box">
+                    <button onclick="toggleTheme()" class="w-full h-full flex items-center justify-center text-gray-400 hover:text-blue-500">
+                        <svg id="sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 block"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2"></path></svg>
+                    </button>
+                </div>
+                <button onclick="openMenuPopup()" class="text-gray-400 hover:text-white transition-transform active:scale-90">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
             </div>
         </nav>
+
         <main class="flex-1 overflow-y-auto">
+            <div class="p-4 border-b border-[var(--border)] bg-[var(--card)]/30">
+                <h2 id="view-title" class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.3em]">📡 LIVE TRAFFIC</h2>
+            </div>
             <table>
-                <thead><tr><th style="width: 22%;">TEAM / OID</th><th style="width: 33%;">CLICK ID</th><th style="width: 15%;">COUNTRY</th><th style="width: 15%; text-align: center;">TIME</th><th style="width: 15%; text-align: right;">PAYOUT</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th style="width: 22%;">TEAM / OID</th>
+                        <th style="width: 33%;">CLICK ID</th>
+                        <th style="width: 15%;">COUNTRY</th>
+                        <th style="width: 15%; text-align: center;">TIME</th>
+                        <th style="width: 15%; text-align: right;">PAYOUT</th>
+                    </tr>
+                </thead>
                 <tbody id="main-table-body"></tbody>
             </table>
         </main>
+
         <aside id="sidebar">
             <div class="p-5 border-b border-[var(--border)] flex justify-between items-center bg-[var(--card)]">
-                <div class="flex items-center gap-3"><span class="text-[10px] font-bold uppercase tracking-widest text-blue-500">Live Traffic</span><div class="flex gap-1.5"><span class="status-dot dot-red"></span><span class="status-dot dot-yellow"></span><span class="status-dot dot-green"></span></div></div>
-                <button onclick="toggleSidebar()" class="text-gray-500 text-2xl">&times;</button>
+                <div class="flex items-center gap-3"><span class="text-[10px] font-bold uppercase tracking-widest text-blue-500">Click Log</span><div class="flex gap-1.5"><span class="status-dot dot-red"></span><span class="status-dot dot-yellow"></span><span class="status-dot dot-green"></span></div></div>
+                <button onclick="closeSidebar()" class="text-gray-500 text-2xl">&times;</button>
             </div>
-            <div id="activity-stream" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
+            <div id="activity-stream"></div>
         </aside>
     </div>
+
 <script>
 const mainTable = document.getElementById('main-table-body');
 const stream = document.getElementById('activity-stream');
 const synth = window.speechSynthesis;
-
 let leadsData = [];
+let currentView = 'live';
 
-// 1. IZIN & SUARA
-function initPermissions() {
-    if (Notification.permission !== "granted") Notification.requestPermission();
+// 1. POPUP MENU (Garis 3)
+function openMenuPopup() {
+    const existing = document.getElementById('nav-popup-menu');
+    if (existing) { existing.remove(); return; }
+
+    const menu = document.createElement('div');
+    menu.id = 'nav-popup-menu';
+    menu.className = "fixed top-16 right-4 w-52 bg-[var(--card)] border border-[var(--border)] rounded-xl z-[999] p-2 flex flex-col gap-1 shadow-2xl overflow-hidden";
+    menu.innerHTML = `
+        <button onclick="switchView('live')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-500/10 text-white w-full">
+            <svg class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+            <span class="font-bold text-[10px] uppercase">Live Traffic</span>
+        </button>
+        <button onclick="switchView('perf')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-green-500/10 text-white w-full">
+            <svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="font-bold text-[10px] uppercase">Performance</span>
+        </button>
+        <div class="h-[1px] bg-[var(--border)] my-1"></div>
+        <button onclick="openSidebar()" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-500/10 text-white w-full">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="font-bold text-[10px] uppercase">Click History</span>
+        </button>
+    `;
+    document.body.appendChild(menu);
+    setTimeout(() => {
+        document.addEventListener('click', function close(e) {
+            if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', close); }
+        }, {capture: true});
+    }, 10);
 }
 
-async function announceLead(clickId, payout, country) {
-    synth.cancel(); 
-    const spelledId = clickId.substring(0, 6).split('').join(' ');
-    const utter = new SpeechSynthesisUtterance(`Lead baru. Klik I D. ${spelledId}. Payout ${payout} dolar.`);
-    utter.lang = 'id-ID';
-    synth.speak(utter);
+// 2. VIEW CONTROLLER
+function switchView(view) {
+    currentView = view;
+    document.getElementById('view-title').innerHTML = (view === 'live') ? '📡 LIVE TRAFFIC' : '🏆 PERFORMANCE STATS';
+    updateDisplay();
+}
 
+function openSidebar() { document.getElementById('sidebar').classList.add('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+
+// 3. SOUND & NOTIF
+async function announceLead(clickId, payout, country) {
+    // SYSTEM NOTIF
     if (Notification.permission === "granted") {
-        new Notification("LEAD BARU: " + clickId, { body: `Payout: $${payout}` });
+        new Notification("🔥 LEAD MASUK: $" + payout, { body: "ID: " + clickId });
     }
+
+    // GOOGLE VOICE (SPEECH)
+    synth.cancel();
+    const idSpelled = clickId.substring(0, 5).split('').join(' ');
+    const utter = new SpeechSynthesisUtterance(`Lead masuk. I D. ${idSpelled}. Payout ${payout} dolar.`);
+    utter.lang = 'id-ID';
+    utter.rate = 0.9;
+    synth.speak(utter);
 
     // TELEGRAM
     const botToken = "8294616704:AAF7M8RQkNKdkJeNvVdeGFG7zrU26vo7sao";
     const chatId = "-1002258281914";
-    const pesan = `🔥 *LEAD MASUK!* 🔥\n\n🆔 *ID:* \`${clickId}\` \n💰 *Payout:* $${payout}\n🌍 *Negara:* ${country || 'ID'}`;
-    fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(pesan)}&parse_mode=Markdown`).catch(e => {});
+    const msg = `🔥 *LEAD MASUK!* 🔥\n\n🆔 *ID:* \`${clickId}\` \n💰 *Payout:* $${payout}\n🌍 *Negara:* ${country || 'ID'}`;
+    fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`).catch(e => {});
 }
 
-// 2. ICONS
+// 4. LOGIKA DISPLAY & KING
 const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
-const userSvg = `<svg class="w-6 h-6" style="color: var(--text); opacity: 0.5;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
+const userSvg = `<svg class="w-6 h-6" style="color: var(--text); opacity: 0.3;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
-// 3. UPDATE TABEL & MARQUEE
 function updateDisplay() {
     if (!leadsData || leadsData.length === 0) return;
+    mainTable.innerHTML = "";
+    let kingId = "";
+    let topVal = 0;
+    let renderList = [];
 
-    // A. Cari Payout Tertinggi & Siapa Pemiliknya (KING)
-    let maxPayout = 0;
-    let kingClickId = "";
-
-    leadsData.forEach(item => {
-        const p = parseFloat(item.payout) || 0;
-        if (p > maxPayout) {
-            maxPayout = p;
-            kingClickId = item.click_id;
-        }
-    });
-
-    // B. Update Marquee Text (Sesuai Class Kamu)
-    const marqueeTextEl = document.querySelector('.marquee-text');
-    if (marqueeTextEl && kingClickId) {
-        marqueeTextEl.innerHTML = `HIGH PAYOUT TODAY <span style="color:#eab308">[ ${kingClickId} ]</span> WITH <span style="color:#22c55e">$${maxPayout.toFixed(2)}</span> // NODE: ASIA-1 // STATUS: SECURE`;
+    if (currentView === 'live') {
+        renderList = leadsData;
+        leadsData.forEach(l => { if(parseFloat(l.payout) >= topVal) { topVal = parseFloat(l.payout); kingId = l.click_id; } });
+    } else {
+        const perf = {};
+        leadsData.forEach(l => {
+            if(!perf[l.click_id]) perf[l.click_id] = {...l, total:0, count:0};
+            perf[l.click_id].total += parseFloat(l.payout);
+            perf[l.click_id].count++;
+        });
+        renderList = Object.values(perf).sort((a,b) => b.total - a.total);
+        if(renderList[0]) { kingId = renderList[0].click_id; topVal = renderList[0].total; }
     }
 
-    // C. Render Tabel
-    mainTable.innerHTML = "";
-    leadsData.forEach((data) => {
-        // MAHKOTA: Diberikan ke SEMUA baris yang punya Click ID sama dengan Sang Raja
-        const isKing = (data.click_id === kingClickId && maxPayout > 0);
-        const countryCode = (data.country || 'ID').toUpperCase();
-        
+    // Update Marquee
+    const marquee = document.getElementById('marquee-text');
+    if(marquee && kingId) marquee.innerHTML = `TOP RECORD: <span style="color:#eab308">${kingId}</span> // PAYOUT: <span style="color:#22c55e">$${topVal.toFixed(2)}</span> // STATUS: SECURE // ASIA-1`;
+
+    renderList.forEach(data => {
+        const isKing = (data.click_id === kingId);
         const row = mainTable.insertRow();
+        const pVal = (currentView === 'perf') ? data.total : parseFloat(data.payout);
         row.innerHTML = `
-            <td class="p-3">
-                <div class="flex items-center gap-3">
-                    ${isKing ? crownSvg : userSvg}
-                    <span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid || 'USER'}</span>
-                </div>
-            </td>
+            <td class="p-3"><div class="flex items-center gap-3">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid || 'USER'}</span></div></td>
             <td class="text-gray-400 font-mono text-xs">${data.click_id}</td>
-            <td>
-                <div class="flex items-center gap-2">
-                    <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6 shadow">
-                    <span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span>
-                </div>
-            </td>
-            <td class="text-gray-500 text-[10px] text-center">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
-            <td class="font-bold text-green-500 text-right text-lg">$${parseFloat(data.payout).toFixed(2)}</td>
+            <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-6 shadow"><span class="text-xs font-bold uppercase" style="color:var(--text)">${data.country||'ID'}</span></div></td>
+            <td class="text-gray-500 text-[10px] text-center">${currentView==='perf' ? data.count+' LEADS' : new Date(data.timestamp||Date.now()).toLocaleTimeString()}</td>
+            <td class="font-bold text-green-500 text-right text-lg">$${pVal.toFixed(2)}</td>
         `;
     });
 }
 
-// 4. LOGIKA DATA MASUK
 function handleData(data, type, isNew = false) {
     if (type === 'LEAD') {
         leadsData.unshift(data);
-        if (leadsData.length > 50) leadsData.pop();
+        if (leadsData.length > 500) leadsData.pop();
         updateDisplay();
         if (isNew) announceLead(data.click_id, data.payout, data.country);
     } else if (type === 'CLICK') {
-        const countryCode = (data.country || 'ID').toUpperCase();
+        const country = (data.country || 'ID').toUpperCase();
         const item = document.createElement('div');
         item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] flex justify-between items-center mb-2 row-animate type-CLICK";
-        item.innerHTML = `
-            <div>
-                <span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span>
-                <div class="text-sm text-gray-400 font-mono truncate w-40">${data.click_id}</div>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span>
-                <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6">
-            </div>`;
+        item.innerHTML = `<div><span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span><div class="text-sm text-gray-400 font-mono truncate w-40">${data.click_id}</div></div>
+            <div class="flex items-center gap-2"><span class="text-xs font-bold opacity-80" style="color:var(--text)">${country}</span><img src="https://flagicons.lipis.dev/flags/4x3/${country.toLowerCase()}.svg" class="w-6"></div>`;
         stream.prepend(item);
         if (stream.children.length > 5) stream.lastChild.remove();
     }
 }
 
-// 5. AUTO RESET JAM 7
-setInterval(() => {
-    const now = new Date();
-    if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
-        leadsData = [];
-        mainTable.innerHTML = "";
-        stream.innerHTML = "";
-        const marqueeTextEl = document.querySelector('.marquee-text');
-        if (marqueeTextEl) marqueeTextEl.innerText = "NODE: ASIA-1 // STATUS: SECURE // LIVE MONITORING...";
-    }
-}, 1000);
-
-// 6. SYNC & PUSHER
+// 5. AUTO & SYNC
 async function autoSync() {
     try {
-        const [resL, resC] = await Promise.all([
-            fetch('/get-history?t=' + Date.now()),
-            fetch('/get-clicks?t=' + Date.now())
-        ]);
-        const leads = await resL.json();
-        const clicks = await resC.json();
-        if (Array.isArray(leads)) { leadsData = leads.slice(0, 50); updateDisplay(); }
-        if (Array.isArray(clicks)) {
-            const currentC = stream.querySelectorAll('.type-CLICK').length;
-            if (currentC < 5) clicks.reverse().forEach(c => handleData(c, 'CLICK', false));
-        }
+        const [resL, resC] = await Promise.all([fetch('/get-history?t=' + Date.now()), fetch('/get-clicks?t=' + Date.now())]);
+        const leads = await resL.json(); const clicks = await resC.json();
+        if (Array.isArray(leads)) { leadsData = leads; updateDisplay(); }
+        if (Array.isArray(clicks)) { stream.innerHTML = ""; clicks.reverse().forEach(c => handleData(c, 'CLICK', false)); }
     } catch (e) {}
 }
 
+setInterval(() => {
+    const now = new Date();
+    if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
+        leadsData = []; mainTable.innerHTML = ""; stream.innerHTML = "";
+    }
+}, 1000);
+
 autoSync();
-setInterval(autoSync, 3000);
+setInterval(autoSync, 5000);
 
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
 channel.bind('new-lead', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'LEAD', true));
 channel.bind('new-click', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'CLICK', false));
 
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-function toggleTheme() {
-    document.body.classList.toggle('light-mode');
-}
+function toggleTheme() { document.body.classList.toggle('light-mode'); }
 document.addEventListener('click', () => { 
-    initPermissions(); 
+    if (Notification.permission !== "granted") Notification.requestPermission();
     synth.speak(new SpeechSynthesisUtterance("")); 
 }, {once: true});
 </script>
