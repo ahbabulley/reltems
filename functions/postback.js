@@ -1,56 +1,37 @@
 export async function onRequest(context) {
   const { request, env } = context;
-
-  // CEK APAKAH DATABASE SUDAH TERKONEKSI
-  if (!env.ROWX_DB) {
-    return new Response("DATABASE ERROR: Kamu belum setting KV Binding 'ROWX_DB' di dashboard Cloudflare!", { status: 500 });
-  }
-
   try {
     const url = new URL(request.url);
-    const click_id = url.searchParams.get('click_id') || "NO_ID";
-    const oid = url.searchParams.get('oid') || "UNKNOWN";
-    const payout = url.searchParams.get('payout') || "0";
-    const country = url.searchParams.get('country') || "id";
-
-    const newLead = {
-      click_id, oid, 
-      payout: parseFloat(payout), 
-      country: country.toLowerCase(), 
+    const type = url.searchParams.get('type') || "LEAD"; // Deteksi LEAD/CLICK
+    const data = {
+      type: type.toUpperCase(),
+      click_id: url.searchParams.get('click_id') || "N/A",
+      oid: url.searchParams.get('oid') || "USER",
+      payout: parseFloat(url.searchParams.get('payout') || "0"),
+      country: (url.searchParams.get('country') || "id").toLowerCase(),
       timestamp: Date.now()
     };
 
-    // SIMPAN KE KV
-    const historyRaw = await env.ROWX_DB.get('leads_history');
-    let history = historyRaw ? JSON.parse(historyRaw) : [];
-    history.unshift(newLead);
-    if (history.length > 50) history = history.slice(0, 50);
-    await env.ROWX_DB.put('leads_history', JSON.stringify(history));
+    // Simpan ke KV (Gabungan)
+    let history = JSON.parse(await env.ROWX_DB.get('all_traffic') || "[]");
+    history.unshift(data);
+    if (history.length > 100) history = history.slice(0, 100);
+    await env.ROWX_DB.put('all_traffic', JSON.stringify(history));
 
-    // KIRIM KE PUSHER (SAMA SEPERTI SEBELUMNYA)
-    const body = JSON.stringify({ name: "new-lead", channels: ["my-channel"], data: JSON.stringify(newLead) });
-    const pusherKey = "6bc0867b80098f3e3424";
-    const pusherAppId = "1814631";
-    const pusherSecret = "647f3b89b88229f63564";
-    const pusherCluster = "ap1";
+    // Pusher Broadcast
+    const pKey = "6bc0867b80098f3e3424", pAppId = "1814631", pSecret = "647f3b89b88229f63564", pCluster = "ap1";
+    const body = JSON.stringify({ name: type === 'LEAD' ? "new-lead" : "new-click", channels: ["my-channel"], data: JSON.stringify(data) });
+    const ts = Math.floor(Date.now() / 1000);
+    const bodyMd5 = await crypto.subtle.digest('MD5', new TextEncoder().encode(body)).then(h => Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join(''));
+    const authQS = `auth_key=${pKey}&auth_timestamp=${ts}&auth_version=1.0&body_md5=${bodyMd5}`;
+    const stringToSign = `POST\n/apps/${pAppId}/events\n${authQS}`;
+    const hmacKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(pSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const signature = await crypto.subtle.sign('HMAC', hmacKey, new TextEncoder().encode(stringToSign)).then(s => Array.from(new Uint8Array(s)).map(b => b.toString(16).padStart(2, '0')).join(''));
 
-    const timestamp = Math.floor(Date.now() / 1000);
-    const bodyMd5 = await crypto.subtle.digest('MD5', new TextEncoder().encode(body))
-      .then(hash => Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join(''));
-    const authQueryString = `auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
-    const stringToSign = `POST\n/apps/${pusherAppId}/events\n${authQueryString}`;
-    const hmacKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(pusherSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-    const signature = await crypto.subtle.sign('HMAC', hmacKey, new TextEncoder().encode(stringToSign))
-      .then(sig => Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join(''));
-
-    await fetch(`https://api-${pusherCluster}.pusher.com/apps/${pusherAppId}/events?${authQueryString}&auth_signature=${signature}`, {
-        method: 'POST',
-        body: body,
-        headers: { 'Content-Type': 'application/json' }
+    await fetch(`https://api-${pCluster}.pusher.com/apps/${pAppId}/events?${authQS}&auth_signature=${signature}`, {
+        method: 'POST', body, headers: { 'Content-Type': 'application/json' }
     });
 
-    return new Response('PHEI 2026 - SUCCESS', { status: 200 });
-  } catch (err) {
-    return new Response('PHEI ERROR: ' + err.message, { status: 500 });
-  }
+    return new Response('OK');
+  } catch (e) { return new Response(e.message, { status: 500 }); }
 }
