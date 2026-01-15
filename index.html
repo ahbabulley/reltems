@@ -90,14 +90,33 @@
     <script>
 const mainTable = document.getElementById('main-table-body');
 const stream = document.getElementById('activity-stream');
-const leadSound = document.getElementById('leadSound');
-let leadsData = [];
 
-// Icons
+// 1. SETTING AUDIO (Suara KAYA)
+const leadSound = new Audio('https://kokoya.pages.dev/kaya.mp3');
+leadSound.preload = 'auto';
+
+// 2. PANCINGAN IZIN BROWSER (PENTING!)
+// Suara baru bisa bunyi setelah Anda klik 1x di halaman web
+document.addEventListener('click', function() {
+    leadSound.play().then(() => {
+        leadSound.pause(); 
+        leadSound.currentTime = 0;
+        console.log("Izin suara aktif!");
+    }).catch(() => {});
+}, { once: true });
+
+let leadsData = [];
 const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 const userSvg = `<svg class="w-6 h-6 text-gray-500/30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
-// --- FUNGSI UPDATE TABEL ---
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleTheme() {
+    const isL = document.body.classList.toggle('light-mode');
+    document.getElementById('sun-icon').classList.toggle('hidden', isL);
+    document.getElementById('moon-icon').classList.toggle('hidden', !isL);
+}
+
+// 3. FUNGSI UPDATE TABEL LEAD
 function updateTable(latestId = null) {
     if (leadsData.length === 0) return;
     const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)), 0);
@@ -117,23 +136,21 @@ function updateTable(latestId = null) {
     });
 }
 
-// --- FUNGSI UTAMA TAMBAH DATA ---
+// 4. FUNGSI TAMBAH DATA (CLICK & LEAD)
 function addData(data, type, shouldPlaySound = true) {
     if (type === 'LEAD') {
-        // Cek apakah data sudah ada di tabel (agar tidak double)
-        const isExist = leadsData.some(l => l.click_id === data.click_id && Math.abs(l.timestamp - data.timestamp) < 1000);
-        
+        const isExist = leadsData.some(l => l.click_id === data.click_id && Math.abs(l.timestamp - data.timestamp) < 5000);
         if (!isExist) {
             if (shouldPlaySound) { 
                 leadSound.currentTime = 0; 
-                leadSound.play().catch(() => {}); 
+                leadSound.play().catch(e => console.log("Belum ada interaksi klik di web")); 
             }
             leadsData.unshift(data);
             if (leadsData.length > 50) leadsData.pop();
             updateTable(data.click_id);
         }
     } else if (type === 'CLICK') {
-        // LIVE TRAFFIC HANYA UNTUK CLICK
+        // Hanya tampilkan 5 di sidebar
         const item = document.createElement('div');
         item.className = `p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center type-CLICK`;
         item.innerHTML = `
@@ -149,39 +166,23 @@ function addData(data, type, shouldPlaySound = true) {
     }
 }
 
-// --- SISTEM AUTO-FETCH (TIAP 2 DETIK) ---
-function syncLeads() {
-    fetch('/get-history')
-        .then(res => res.json())
-        .then(history => {
-            if (Array.isArray(history) && history.length > 0) {
-                // Balik urutan agar data terbaru diproses duluan
-                history.reverse().forEach(item => {
-                    addData(item, 'LEAD', true); 
-                });
-            }
-        }).catch(e => console.log("Sync error"));
+// 5. SISTEM SINKRONISASI (TIAP 2 DETIK)
+function syncAll() {
+    // Ambil Lead
+    fetch('/get-history').then(res => res.json()).then(h => {
+        if(Array.isArray(h)) h.reverse().forEach(item => addData(item, 'LEAD', true));
+    });
+    // Ambil Click
+    fetch('/get-clicks').then(res => res.json()).then(c => {
+        if(Array.isArray(c)) c.reverse().forEach(item => addData(item, 'CLICK', false));
+    });
 }
 
-function syncClicks() {
-    fetch('/get-clicks')
-        .then(res => res.json())
-        .then(clicks => {
-            if (Array.isArray(clicks)) {
-                // Untuk click history, kita tampilkan tanpa suara
-                clicks.reverse().forEach(c => addData(c, 'CLICK', false));
-            }
-        });
-}
+// Jalankan auto-sync tiap 2 detik
+setInterval(syncAll, 2000);
+syncAll(); // Jalankan sekali saat start
 
-// Jalankan pertama kali saat buka web
-syncLeads();
-syncClicks();
-
-// Jalankan Auto-Reload data tiap 2 detik (Tanpa refresh halaman)
-setInterval(syncLeads, 2000);
-
-// --- PUSHER (INSTAN/REALTIME) ---
+// 6. PUSHER (REALTIME INSTAN)
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
 
