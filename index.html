@@ -87,114 +87,125 @@
             <div id="activity-stream" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
         </aside>
     </div>
-    <script>
+<script>
 const mainTable = document.getElementById('main-table-body');
 const stream = document.getElementById('activity-stream');
 
-// 1. SETTING AUDIO (Suara KAYA)
+// 1. SETTING AUDIO & VOICE
 const leadSound = new Audio('https://kokoya.pages.dev/kaya.mp3');
-leadSound.preload = 'auto';
+const synth = window.speechSynthesis;
 
-// 2. PANCINGAN IZIN BROWSER (PENTING!)
-// Suara baru bisa bunyi setelah Anda klik 1x di halaman web
+// Meminta izin Notifikasi Sistem saat web dibuka
+if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
+// 2. PANCINGAN IZIN (KLIK DI MANA SAJA SETELAH REFRESH)
 document.addEventListener('click', function() {
     leadSound.play().then(() => {
         leadSound.pause(); 
         leadSound.currentTime = 0;
-        console.log("Izin suara aktif!");
     }).catch(() => {});
 }, { once: true });
 
 let leadsData = [];
-const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
-const userSvg = `<svg class="w-6 h-6 text-gray-500/30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
+let displayedClickIds = new Set(); // Penyaring agar click tidak double
 
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-function toggleTheme() {
-    const isL = document.body.classList.toggle('light-mode');
-    document.getElementById('sun-icon').classList.toggle('hidden', isL);
-    document.getElementById('moon-icon').classList.toggle('hidden', !isL);
+
+// 3. FUNGSI BICARA & NOTIFIKASI
+function notifyMe(title, message) {
+    // Suara Google
+    const utter = new SpeechSynthesisUtterance(message);
+    utter.lang = 'id-ID'; // Bahasa Indonesia
+    utter.rate = 1.0;
+    synth.speak(utter);
+
+    // Notifikasi Windows/Chrome
+    if (Notification.permission === "granted") {
+        new Notification(title, { body: message, icon: 'https://flagicons.lipis.dev/flags/4x3/id.svg' });
+    }
 }
 
-// 3. FUNGSI UPDATE TABEL LEAD
+// 4. UPDATE TABEL
 function updateTable(latestId = null) {
-    if (leadsData.length === 0) return;
+    if (!leadsData || leadsData.length === 0) return;
     const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)), 0);
     mainTable.innerHTML = "";
     leadsData.forEach((data, index) => {
-        const isKing = parseFloat(data.payout) === maxPayout && maxPayout > 0;
         const row = mainTable.insertRow();
         if (latestId && data.click_id === latestId) row.classList.add('row-animate');
-        
         row.innerHTML = `
-            <td><div class="flex items-center gap-4">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid}</span></div></td>
-            <td class="text-gray-400 font-medium truncate">${data.click_id}</td>
-            <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-6 rounded-sm"><span class="font-bold text-gray-400 uppercase text-xs">${data.country || 'ID'}</span></div></td>
-            <td style="text-align: center;" class="text-gray-500 text-xs font-bold">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
-            <td style="text-align: right;" class="font-bold text-green-500 text-base">$${parseFloat(data.payout).toFixed(2)}</td>
+            <td class="p-3 font-bold text-blue-500 uppercase">${data.oid}</td>
+            <td class="text-gray-400 font-mono">${data.click_id}</td>
+            <td><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-6"></td>
+            <td class="text-gray-500">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
+            <td class="font-bold text-green-500">$${parseFloat(data.payout).toFixed(2)}</td>
         `;
     });
 }
 
-// 4. FUNGSI TAMBAH DATA (CLICK & LEAD)
-function addData(data, type, shouldPlaySound = true) {
+// 5. LOGIKA TAMBAH DATA (LEAD & CLICK)
+function addData(data, type, isNew = false) {
     if (type === 'LEAD') {
-        const isExist = leadsData.some(l => l.click_id === data.click_id && Math.abs(l.timestamp - data.timestamp) < 5000);
+        const isExist = leadsData.some(l => l.click_id === data.click_id);
         if (!isExist) {
-            if (shouldPlaySound) { 
-                leadSound.currentTime = 0; 
-                leadSound.play().catch(e => console.log("Belum ada interaksi klik di web")); 
-            }
             leadsData.unshift(data);
             if (leadsData.length > 50) leadsData.pop();
             updateTable(data.click_id);
+            
+            if (isNew) {
+                leadSound.play().catch(() => {});
+                notifyMe("LEAD BARU!", `Ada lead masuk dari ID ${data.click_id}`);
+            }
         }
     } else if (type === 'CLICK') {
-        // Hanya tampilkan 5 di sidebar
-        const item = document.createElement('div');
-        item.className = `p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center type-CLICK`;
-        item.innerHTML = `
-            <div>
-                <span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span>
-                <div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div>
-            </div>
-            <img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
-        
-        stream.prepend(item);
-        const allClicks = stream.querySelectorAll('.type-CLICK');
-        if (allClicks.length > 5) stream.removeChild(allClicks[allClicks.length - 1]);
+        // Cek agar tidak jalan terus (Hanya proses jika ID belum ada di layar)
+        if (!displayedClickIds.has(data.click_id)) {
+            displayedClickIds.add(data.click_id);
+            
+            const item = document.createElement('div');
+            item.className = `p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center type-CLICK`;
+            item.innerHTML = `<div><span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span><div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
+            
+            stream.prepend(item);
+            
+            // Batasi 5 kotak di sidebar
+            const allClicks = stream.querySelectorAll('.type-CLICK');
+            if (allClicks.length > 5) {
+                const removedId = allClicks[allClicks.length - 1].querySelector('.font-mono').innerText;
+                displayedClickIds.delete(removedId);
+                stream.removeChild(allClicks[allClicks.length - 1]);
+            }
+
+            if (isNew) {
+                notifyMe("CLICK BARU", `Klik baru terdeteksi. ID: ${data.click_id}`);
+            }
+        }
     }
 }
 
-// 5. SISTEM SINKRONISASI (TIAP 2 DETIK)
-function syncAll() {
-    // Ambil Lead
-    fetch('/get-history').then(res => res.json()).then(h => {
-        if(Array.isArray(h)) h.reverse().forEach(item => addData(item, 'LEAD', true));
-    });
-    // Ambil Click
-    fetch('/get-clicks').then(res => res.json()).then(c => {
-        if(Array.isArray(c)) c.reverse().forEach(item => addData(item, 'CLICK', false));
-    });
+// 6. SYNC DATA
+async function syncAll() {
+    try {
+        const [resL, resC] = await Promise.all([fetch('/get-history'), fetch('/get-clicks')]);
+        const leads = await resL.json();
+        const clicks = await resC.json();
+        
+        if (Array.isArray(leads)) leads.reverse().forEach(l => addData(l, 'LEAD', false));
+        if (Array.isArray(clicks)) clicks.reverse().forEach(c => addData(c, 'CLICK', false));
+    } catch (e) {}
 }
 
-// Jalankan auto-sync tiap 2 detik
+// Interval 2 detik untuk cek data baru
 setInterval(syncAll, 2000);
-syncAll(); // Jalankan sekali saat start
+syncAll();
 
-// 6. PUSHER (REALTIME INSTAN)
+// 7. PUSHER (REALTIME)
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
-
-channel.bind('new-lead', d => {
-    const data = typeof d === 'string' ? JSON.parse(d) : d;
-    addData(data, 'LEAD', true);
-});
-
-channel.bind('new-click', d => {
-    const data = typeof d === 'string' ? JSON.parse(d) : d;
-    addData(data, 'CLICK', false);
-});
-    </script>
+channel.bind('new-lead', d => addData(typeof d === 'string' ? JSON.parse(d) : d, 'LEAD', true));
+channel.bind('new-click', d => addData(typeof d === 'string' ? JSON.parse(d) : d, 'CLICK', true));
+</script>
 </body>
 </html>
