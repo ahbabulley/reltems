@@ -34,8 +34,7 @@
         .row-animate { animation: rowIn 1.2s ease-out; }
         @keyframes rowIn { from { background: rgba(59, 130, 246, 0.25); } to { background: transparent; } }
 
-        /* Popup Nav Style */
-        #nav-popup-menu { box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(8px); }
+        #nav-popup-menu { box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); background: rgba(22, 27, 34, 0.95); }
     </style>
 </head>
 <body class="dark-mode">
@@ -45,24 +44,22 @@
                 <span class="text-2xl font-bold font-rowx text-blue-500">R.O.W.X</span>
                 <span class="phei-text">PHEI EDITION 2026</span>
             </div>
-            <div class="marquee-container"><div class="marquee-text uppercase" id="marquee-text">WAITING FOR NETWORK...</div></div>
+            <div class="marquee-container"><div class="marquee-text uppercase" id="marquee-text">INITIALIZING SECURE CONNECTION...</div></div>
             <div class="flex items-center gap-4">
                 <div class="theme-box">
                     <button onclick="toggleTheme()" class="w-full h-full flex items-center justify-center text-gray-400 hover:text-blue-500">
                         <svg id="sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 block"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2"></path></svg>
                     </button>
                 </div>
-                <button onclick="openMenuPopup()" class="text-gray-400 hover:text-white transition-transform active:scale-90">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                    </svg>
+                <button onclick="openMenuPopup()" class="text-gray-400 hover:text-white active:scale-90 transition-all">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                 </button>
             </div>
         </nav>
 
         <main class="flex-1 overflow-y-auto">
             <div class="p-4 border-b border-[var(--border)] bg-[var(--card)]/30">
-                <h2 id="view-title" class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.3em]">📡 LIVE TRAFFIC</h2>
+                <h2 id="view-title" class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.3em]">🚀 REALTIME LEADS</h2>
             </div>
             <table>
                 <thead>
@@ -80,7 +77,10 @@
 
         <aside id="sidebar">
             <div class="p-5 border-b border-[var(--border)] flex justify-between items-center bg-[var(--card)]">
-                <div class="flex items-center gap-3"><span class="text-[10px] font-bold uppercase tracking-widest text-blue-500">Click Log</span><div class="flex gap-1.5"><span class="status-dot dot-red"></span><span class="status-dot dot-yellow"></span><span class="status-dot dot-green"></span></div></div>
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-blue-500">📡 LIVE TRAFFIC</span>
+                    <div class="flex gap-1.5"><span class="status-dot dot-red"></span><span class="status-dot dot-yellow"></span><span class="status-dot dot-green"></span></div>
+                </div>
                 <button onclick="closeSidebar()" class="text-gray-500 text-2xl">&times;</button>
             </div>
             <div id="activity-stream"></div>
@@ -94,18 +94,18 @@ const synth = window.speechSynthesis;
 let leadsData = [];
 let currentView = 'live';
 
-// 1. POPUP MENU (Garis 3)
+// 1. POPUP MENU
 function openMenuPopup() {
     const existing = document.getElementById('nav-popup-menu');
     if (existing) { existing.remove(); return; }
 
     const menu = document.createElement('div');
     menu.id = 'nav-popup-menu';
-    menu.className = "fixed top-16 right-4 w-52 bg-[var(--card)] border border-[var(--border)] rounded-xl z-[999] p-2 flex flex-col gap-1 shadow-2xl overflow-hidden";
+    menu.className = "fixed top-16 right-4 w-52 border border-[var(--border)] rounded-xl z-[999] p-2 flex flex-col gap-1 animate-in slide-in-from-top-2";
     menu.innerHTML = `
         <button onclick="switchView('live')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-500/10 text-white w-full">
-            <svg class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
-            <span class="font-bold text-[10px] uppercase">Live Traffic</span>
+            <svg class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span class="font-bold text-[10px] uppercase">Realtime Leads</span>
         </button>
         <button onclick="switchView('perf')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-green-500/10 text-white w-full">
             <svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -113,51 +113,44 @@ function openMenuPopup() {
         </button>
         <div class="h-[1px] bg-[var(--border)] my-1"></div>
         <button onclick="openSidebar()" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-500/10 text-white w-full">
-            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span class="font-bold text-[10px] uppercase">Click History</span>
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="font-bold text-[10px] uppercase">Live Traffic</span>
         </button>
     `;
     document.body.appendChild(menu);
     setTimeout(() => {
         document.addEventListener('click', function close(e) {
             if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', close); }
-        }, {capture: true});
+        }, {capture: true, once: true});
     }, 10);
 }
 
-// 2. VIEW CONTROLLER
 function switchView(view) {
     currentView = view;
-    document.getElementById('view-title').innerHTML = (view === 'live') ? '📡 LIVE TRAFFIC' : '🏆 PERFORMANCE STATS';
+    document.getElementById('view-title').innerHTML = (view === 'live') ? '🚀 REALTIME LEADS' : '🏆 PERFORMANCE STATS';
     updateDisplay();
 }
-
 function openSidebar() { document.getElementById('sidebar').classList.add('open'); }
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
 
-// 3. SOUND & NOTIF
+// 2. SOUND & NOTIF
 async function announceLead(clickId, payout, country) {
-    // SYSTEM NOTIF
     if (Notification.permission === "granted") {
         new Notification("🔥 LEAD MASUK: $" + payout, { body: "ID: " + clickId });
     }
-
-    // GOOGLE VOICE (SPEECH)
     synth.cancel();
     const idSpelled = clickId.substring(0, 5).split('').join(' ');
-    const utter = new SpeechSynthesisUtterance(`Lead masuk. I D. ${idSpelled}. Payout ${payout} dolar.`);
+    const utter = new SpeechSynthesisUtterance(`Lead baru. ID. ${idSpelled}. Payout ${payout} dolar.`);
     utter.lang = 'id-ID';
-    utter.rate = 0.9;
     synth.speak(utter);
 
-    // TELEGRAM
     const botToken = "8294616704:AAF7M8RQkNKdkJeNvVdeGFG7zrU26vo7sao";
     const chatId = "-1002258281914";
     const msg = `🔥 *LEAD MASUK!* 🔥\n\n🆔 *ID:* \`${clickId}\` \n💰 *Payout:* $${payout}\n🌍 *Negara:* ${country || 'ID'}`;
     fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`).catch(e => {});
 }
 
-// 4. LOGIKA DISPLAY & KING
+// 3. LOGIKA DISPLAY
 const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 const userSvg = `<svg class="w-6 h-6" style="color: var(--text); opacity: 0.3;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
@@ -182,9 +175,8 @@ function updateDisplay() {
         if(renderList[0]) { kingId = renderList[0].click_id; topVal = renderList[0].total; }
     }
 
-    // Update Marquee
     const marquee = document.getElementById('marquee-text');
-    if(marquee && kingId) marquee.innerHTML = `TOP RECORD: <span style="color:#eab308">${kingId}</span> // PAYOUT: <span style="color:#22c55e">$${topVal.toFixed(2)}</span> // STATUS: SECURE // ASIA-1`;
+    if(marquee && kingId) marquee.innerHTML = `HIGH RECORD: <span style="color:#eab308">${kingId}</span> // TOTAL: <span style="color:#22c55e">$${topVal.toFixed(2)}</span> // ASIA-1 // SECURE`;
 
     renderList.forEach(data => {
         const isKing = (data.click_id === kingId);
@@ -209,15 +201,14 @@ function handleData(data, type, isNew = false) {
     } else if (type === 'CLICK') {
         const country = (data.country || 'ID').toUpperCase();
         const item = document.createElement('div');
-        item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] flex justify-between items-center mb-2 row-animate type-CLICK";
+        item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] flex justify-between items-center mb-2 row-animate";
         item.innerHTML = `<div><span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span><div class="text-sm text-gray-400 font-mono truncate w-40">${data.click_id}</div></div>
             <div class="flex items-center gap-2"><span class="text-xs font-bold opacity-80" style="color:var(--text)">${country}</span><img src="https://flagicons.lipis.dev/flags/4x3/${country.toLowerCase()}.svg" class="w-6"></div>`;
         stream.prepend(item);
-        if (stream.children.length > 5) stream.lastChild.remove();
+        if (stream.children.length > 15) stream.lastChild.remove();
     }
 }
 
-// 5. AUTO & SYNC
 async function autoSync() {
     try {
         const [resL, resC] = await Promise.all([fetch('/get-history?t=' + Date.now()), fetch('/get-clicks?t=' + Date.now())]);
