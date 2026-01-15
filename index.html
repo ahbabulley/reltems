@@ -11,16 +11,10 @@
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { 
-            --bg: #0d1117; --card: #161b22; --border: #30363d; 
-            --text-main: #c9d1d9; --text-dim: #8b949e; --accent: #3b82f6; 
-        }
-        .light-mode { 
-            --bg: #ffffff; --card: #f6f8fa; --border: #d0d7de; 
-            --text-main: #1f2328; --text-dim: #57606a; --accent: #0969da; 
-        }
+        :root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --sub-text: #8b949e; }
+        .light-mode { --bg: #ffffff; --card: #f6f8fa; --text: #24292f; --border: #d0d7de; --sub-text: #57606a; }
         
-        body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text-main); overflow: hidden; transition: 0.3s; }
+        body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); overflow: hidden; transition: 0.3s; }
         .font-rowx { font-family: 'Orbitron', sans-serif; }
         
         nav { display: flex; align-items: center; padding: 0 24px; height: 75px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
@@ -29,30 +23,20 @@
         .marquee-text { 
             display: inline-block; white-space: nowrap; position: absolute;
             animation: marquee 25s linear infinite; font-size: 11px; font-weight: 700; 
-            color: var(--text-dim); padding-left: 100%; will-change: transform;
+            color: var(--sub-text); padding-left: 100%; will-change: transform;
         }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
         table { width: 100%; border-collapse: collapse; }
-        th { background: var(--card); color: var(--text-dim); font-size: 10px; padding: 12px 24px; border-bottom: 2px solid var(--border); text-align: left; text-transform: uppercase; letter-spacing: 1px; }
-        td { padding: 12px 24px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-main); }
+        th { background: var(--card); color: var(--sub-text); font-size: 10px; padding: 12px 24px; border-bottom: 2px solid var(--border); text-align: left; text-transform: uppercase; letter-spacing: 1px; }
+        td { padding: 12px 24px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text); }
         
-        .theme-box { background: var(--card); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); }
-        #nav-popup-menu { backdrop-filter: blur(15px); background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); color: var(--text-main); }
-        .search-input { background: var(--bg); border: 1px solid var(--border); color: var(--text-main); padding: 5px 12px; border-radius: 6px; font-size: 11px; outline: none; width: 220px; }
-        
-        #voice-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+        .theme-box { background: var(--bg); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); }
+        #nav-popup-menu { backdrop-filter: blur(10px); background: var(--card); border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        .search-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; font-size: 11px; outline: none; width: 220px; }
     </style>
 </head>
 <body class="dark-mode">
-
-    <div id="voice-overlay">
-        <h1 class="text-blue-500 font-rowx text-2xl animate-pulse uppercase tracking-tighter">PHEI SYSTEM 2026</h1>
-        <button onclick="enableSystem()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95">
-            AKTIFKAN MONITORING & SUARA
-        </button>
-        <p class="text-[10px] text-gray-500 uppercase tracking-widest">Authorized Access Only</p>
-    </div>
 
     <div class="flex flex-col h-screen relative">
         <nav>
@@ -65,11 +49,11 @@
             </div>
             <div class="flex items-center gap-4">
                 <div class="theme-box" onclick="toggleTheme()">
-                    <svg id="sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 block"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2" stroke-linecap="round"></path></svg>
-                    <svg id="moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 hidden"><path d="M21.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-width="2" stroke-linecap="round"></path></svg>
+                    <svg id="sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 block"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2"></path></svg>
+                    <svg id="moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 hidden"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-width="2"></path></svg>
                 </div>
-                <button onclick="openMenuPopup()" class="text-[var(--text-dim)] hover:text-blue-500 transition-all active:scale-90">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                <button onclick="openMenuPopup()" class="text-gray-400 hover:text-blue-500 transition-all active:scale-90">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                 </button>
             </div>
         </nav>
@@ -103,24 +87,36 @@ const synth = window.speechSynthesis;
 let leadsData = [];
 let clicksData = [];
 let currentView = 'live';
-let isSystemEnabled = false;
 
-// MAHKOTA STATIS (TIDAK GERAK)
 const crownSvg = `<svg class="w-5 h-5 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
-
-function enableSystem() {
-    isSystemEnabled = true;
-    document.getElementById('voice-overlay').style.display = 'none';
-    if (Notification.permission !== 'granted') Notification.requestPermission();
-    const speak = new SpeechSynthesisUtterance("Sistem Monitoring Aktif");
-    speak.lang = 'id-ID';
-    synth.speak(speak);
-}
+const userSvg = `<svg class="w-5 h-5 opacity-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
 function getFlag(country) {
     if (!country) return 'id'; 
     let code = country.toLowerCase();
     return code === 'uk' ? 'gb' : code;
+}
+
+function openMenuPopup() {
+    const existing = document.getElementById('nav-popup-menu');
+    if (existing) { existing.remove(); return; }
+    const menu = document.createElement('div');
+    menu.id = 'nav-popup-menu';
+    menu.className = "fixed top-16 right-4 w-56 border border-[var(--border)] rounded-xl z-[999] p-2 flex flex-col gap-1 shadow-2xl";
+    menu.innerHTML = `
+        <button onclick="switchView('live')" class="p-3 rounded-lg hover:bg-blue-500/10 text-[var(--text)] w-full text-left font-bold text-[10px] uppercase">Realtime Leads</button>
+        <button onclick="switchView('perf')" class="p-3 rounded-lg hover:bg-green-500/10 text-[var(--text)] w-full text-left font-bold text-[10px] uppercase">Performance</button>
+        <button onclick="switchView('traffic')" class="p-3 rounded-lg hover:bg-purple-500/10 text-[var(--text)] w-full text-left font-bold text-[10px] uppercase">Live Traffic</button>
+    `;
+    document.body.appendChild(menu);
+    setTimeout(() => document.addEventListener('click', (e) => { if(!menu.contains(e.target)) menu.remove(); }, {once:true, capture:true}), 10);
+}
+
+function switchView(view) {
+    currentView = view;
+    document.getElementById('search-container').classList.toggle('hidden', view !== 'traffic');
+    document.getElementById('view-title').innerText = view === 'live' ? "🚀 REALTIME LEADS" : (view === 'perf' ? "🏆 PERFORMANCE" : "📡 LIVE TRAFFIC (CLICKS)");
+    updateDisplay();
 }
 
 function updateDisplay() {
@@ -147,25 +143,19 @@ function updateDisplay() {
             row.innerHTML = `
                 <td class="p-4 font-bold text-blue-500 uppercase">${d.oid||'USR'}</td>
                 <td class="font-mono text-xs opacity-50 truncate">${d.click_id}</td>
-                <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-6 shadow"><span class="text-sm font-bold uppercase">${d.country||'ID'}</span></div></td>
+                <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow"><span class="text-sm font-bold uppercase">${d.country||'ID'}</span></div></td>
                 <td class="text-center text-[10px] opacity-50">${new Date(d.timestamp).toLocaleTimeString()}</td>
                 <td class="text-right font-bold text-green-500">$${parseFloat(d.payout).toFixed(2)}</td>
             `;
         });
     } else if (currentView === 'perf') {
-        // PERFORMANCE CUKUP: CLICK ID, INFO, PAYOUT
         tableHead.innerHTML = `<tr><th width="50%">CLICK ID</th><th width="25%" class="text-center">INFO</th><th width="25%" class="text-right">PAYOUT</th></tr>`;
         sortedPerf.forEach(d => {
             const isKing = d.click_id === kingId;
             const row = mainTable.insertRow();
             row.innerHTML = `
-                <td class="p-4">
-                    <div class="flex items-center gap-3">
-                        ${isKing ? crownSvg : '<div class="w-5"></div>'}
-                        <span class="font-mono text-xs ${isKing ? 'text-yellow-500 font-bold' : 'opacity-70'}">${d.click_id}</span>
-                    </div>
-                </td>
-                <td class="text-center text-[10px] font-bold uppercase">${d.count} Leads</td>
+                <td class="p-4"><div class="flex items-center gap-3">${isKing ? crownSvg : '<div class="w-5"></div>'}<span class="font-mono text-xs ${isKing ? 'text-yellow-500 font-bold' : 'opacity-70'}">${d.click_id}</span></div></td>
+                <td class="text-center text-[10px] font-bold uppercase">${d.count} LEADS</td>
                 <td class="text-right font-bold text-green-500">$${d.total.toFixed(2)}</td>
             `;
         });
@@ -173,9 +163,6 @@ function updateDisplay() {
         tableHead.innerHTML = `<tr><th width="40%">CLICK ID</th><th width="20%">COUNTRY</th><th width="20%">STATUS</th><th width="20%" class="text-right">TIME</th></tr>`;
         filterClicks();
     }
-
-    const m = document.getElementById('marquee-text');
-    if(m && kingId) m.innerHTML = `🏆 TOP: <span class="text-yellow-500">${kingId}</span> // EARNING: <span class="text-green-500">$${topVal.toFixed(2)}</span> // NODE ASIA-1 // STATUS: SECURE`;
 }
 
 function filterClicks() {
@@ -185,26 +172,20 @@ function filterClicks() {
     clicksData.forEach(c => {
         if(c.click_id.toLowerCase().includes(s) || (c.country||'').toLowerCase().includes(s)) {
             const row = mainTable.insertRow();
-            row.innerHTML = `<td class="p-4 font-mono text-xs text-blue-400">${c.click_id}</td><td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(c.country)}.svg" class="w-6"><span class="text-sm font-bold uppercase">${c.country||'ID'}</span></div></td><td><span class="text-[9px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded">CLICKED</span></td><td class="text-right text-[10px] opacity-40">${new Date().toLocaleTimeString()}</td>`;
+            row.innerHTML = `<td class="p-4 font-mono text-xs text-blue-400">${c.click_id}</td><td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(c.country)}.svg" class="w-5"><span class="text-sm font-bold uppercase">${c.country||'ID'}</span></div></td><td><span class="text-[9px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded">CLICKED</span></td><td class="text-right text-[10px] opacity-40">${new Date().toLocaleTimeString()}</td>`;
         }
     });
 }
 
 function handleData(data, type, isNew = false) {
     if (type === 'LEAD') {
-        leadsData.unshift(data);
-        if (leadsData.length > 500) leadsData.pop();
+        leadsData.unshift(data); if (leadsData.length > 500) leadsData.pop();
         updateDisplay(); 
-        if (isNew && isSystemEnabled) {
-            new Notification("🔥 LEAD MASUK!", { body: `ID: ${data.click_id} | $${data.payout}` });
-            synth.cancel();
-            const utter = new SpeechSynthesisUtterance(`Lead ${data.payout} dolar masuk.`);
-            utter.lang = 'id-ID';
-            synth.speak(utter);
+        if (isNew) {
+            fetch(`https://api.telegram.org/bot8294616704:AAF7M8RQkNKdkJeNvVdeGFG7zrU26vo7sao/sendMessage?chat_id=-1002258281914&text=${encodeURIComponent('🔥 *LEAD MASUK!* 🔥\n\n🆔 ID: `' + data.click_id + '` \n💰 Payout: $' + data.payout)}&parse_mode=Markdown`).catch(e => {});
         }
     } else {
-        clicksData.unshift(data);
-        if (clicksData.length > 200) clicksData.pop();
+        clicksData.unshift(data); if (clicksData.length > 200) clicksData.pop();
         if(currentView === 'traffic') updateDisplay();
     }
 }
@@ -215,28 +196,12 @@ function toggleTheme() {
     document.getElementById('moon-icon').classList.toggle('hidden', !isLight);
 }
 
-function openMenuPopup() {
-    const existing = document.getElementById('nav-popup-menu');
-    if (existing) { existing.remove(); return; }
-    const menu = document.createElement('div');
-    menu.id = 'nav-popup-menu';
-    menu.className = "fixed top-16 right-4 w-56 z-[999] p-2 flex flex-col gap-1 shadow-2xl border border-[var(--border)]";
-    menu.innerHTML = `
-        <button onclick="switchView('live')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-500/10 w-full text-left"><span class="font-bold text-[10px] uppercase text-blue-500">Realtime Leads</span></button>
-        <button onclick="switchView('perf')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-green-500/10 w-full text-left"><span class="font-bold text-[10px] uppercase text-green-500">Performance</span></button>
-        <button onclick="switchView('traffic')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-purple-500/10 w-full text-left"><span class="font-bold text-[10px] uppercase text-purple-500">Live Traffic</span></button>
-    `;
-    document.body.appendChild(menu);
-    setTimeout(() => document.addEventListener('click', (e) => { if(!menu.contains(e.target)) menu.remove(); }, {once:true, capture:true}), 10);
-}
-
-function switchView(view) {
-    currentView = view;
-    document.getElementById('search-container').classList.toggle('hidden', view !== 'traffic');
-    const titles = { live: "🚀 REALTIME LEADS", perf: "🏆 PERFORMANCE", traffic: "📡 LIVE TRAFFIC" };
-    document.getElementById('view-title').innerText = titles[view];
-    updateDisplay();
-}
+setInterval(() => {
+    const now = new Date();
+    if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
+        leadsData = []; clicksData = []; updateDisplay();
+    }
+}, 1000);
 
 async function autoSync() {
     try {
@@ -253,8 +218,7 @@ const channel = pusher.subscribe('my-channel');
 channel.bind('new-lead', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'LEAD', true));
 channel.bind('new-click', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'CLICK', false));
 
-autoSync();
-setInterval(autoSync, 10000);
+autoSync(); setInterval(autoSync, 10000);
 </script>
 </body>
 </html>
