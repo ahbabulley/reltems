@@ -158,20 +158,36 @@
             });
         }
 
-        function addData(data, type) {
-            if (type === 'LEAD') {
-                leadSound.play().catch(() => {});
-                leadsData.unshift(data);
-                if (leadsData.length > 50) leadsData.pop();
-                updateTable(data.click_id);
-            }
-            
-            const item = document.createElement('div');
-            item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center";
-            item.innerHTML = `<div><span class="text-[9px] font-bold text-blue-500 uppercase">${type}</span><div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
-            stream.prepend(item);
-            if (stream.children.length > 25) stream.lastChild.remove();
-        }
+function addData(data, type) {
+    if (type === 'LEAD') {
+        // Efek suara instant
+        leadSound.play().catch(() => {});
+        
+        // Masukin data ke list teratas biar langsung muncul di tabel
+        leadsData.unshift(data);
+        if (leadsData.length > 50) leadsData.pop();
+        
+        // Update tabel detik itu juga!
+        updateTable(data.click_id); 
+    }
+    
+    // Ini buat Live Traffic di Sidebar agar tetap Update
+    const item = document.createElement('div');
+    item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center";
+    item.innerHTML = `<div><span class="text-[9px] font-bold text-blue-500 uppercase">${type}</span><div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
+    stream.prepend(item);
+    
+    // Simpan ke SessionStorage biar kalau cuma reload biasa, traffic sidebar nggak kosong melompong
+    sessionStorage.setItem('last_traffic', stream.innerHTML);
+    
+    if (stream.children.length > 25) stream.lastChild.remove();
+}
+
+// Tambahan biar Live Traffic Sidebar nggak hilang pas reload
+window.onload = () => {
+    const savedTraffic = sessionStorage.getItem('last_traffic');
+    if (savedTraffic) stream.innerHTML = savedTraffic;
+};
 
         // Fetch dari Database Cloudflare
         fetch('/get-history').then(res => res.json()).then(h => {
@@ -186,3 +202,4 @@
     </script>
 </body>
 </html>
+
