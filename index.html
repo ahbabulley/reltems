@@ -31,7 +31,7 @@
                 <span class="text-2xl font-bold font-rowx text-blue-500">R.O.W.X</span>
                 <span class="text-[7px] font-bold tracking-[0.2em] opacity-40">PHEI EDITION 2026</span>
             </div>
-            <div class="marquee-container"><div class="marquee-text uppercase" id="marquee-text">INITIALIZING GLOBAL DATA SYNC...</div></div>
+            <div class="marquee-container"><div class="marquee-text uppercase" id="marquee-text">WAITING FOR DATA...</div></div>
             <div class="flex items-center gap-4">
                 <div class="theme-box" onclick="toggleTheme()">
                     <svg id="sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 block"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2"></path></svg>
@@ -47,7 +47,7 @@
             <div class="p-4 border-b border-[var(--border)] bg-[var(--card)]/30 flex justify-between items-center">
                 <h2 id="view-title" class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.3em]">🚀 REALTIME LEADS</h2>
                 <div id="search-container" class="hidden">
-                    <input type="text" id="clickSearch" class="search-input" placeholder="Search ID or Country..." onkeyup="filterClicks()">
+                    <input type="text" id="clickSearch" class="search-input" placeholder="Cari ID / Negara..." onkeyup="filterClicks()">
                 </div>
             </div>
             <table id="data-table">
@@ -58,7 +58,6 @@
     </div>
 
 <script>
-// --- VARIABLE GLOBAL ---
 const mainTable = document.getElementById('main-table-body');
 const tableHead = document.getElementById('table-head');
 const synth = window.speechSynthesis;
@@ -69,26 +68,6 @@ let currentView = 'live';
 const crownSvg = `<svg class="w-5 h-5 text-yellow-500 animate-bounce" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 const userSvg = `<svg class="w-5 h-5 opacity-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
-// --- NOTIFIKASI SISTEM ---
-function sendSystemNotif(payout, clickId) {
-    if (Notification.permission === "granted") {
-        new Notification("🔥 LEAD MASUK!", {
-            body: `ID: ${clickId} | Payout: $${payout}`,
-            icon: "icon.png"
-        });
-    }
-}
-
-// --- SUARA GOOGLE ---
-function playVoice(text) {
-    synth.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'id-ID'; // Menggunakan Bahasa Indonesia
-    utter.rate = 1.0;
-    synth.speak(utter);
-}
-
-// --- POPUP MENU ---
 function openMenuPopup() {
     const existing = document.getElementById('nav-popup-menu');
     if (existing) { existing.remove(); return; }
@@ -104,18 +83,17 @@ function openMenuPopup() {
     setTimeout(() => document.addEventListener('click', (e) => { if(!menu.contains(e.target)) menu.remove(); }, {once:true, capture:true}), 10);
 }
 
-// --- SWITCH VIEW ---
 function switchView(view) {
     currentView = view;
     document.getElementById('search-container').classList.toggle('hidden', view !== 'traffic');
     const title = document.getElementById('view-title');
+    // Emoji Judul disesuaikan dengan SVG tombol
     if(view === 'live') title.innerText = "🚀 REALTIME LEADS";
     else if(view === 'perf') title.innerText = "🏆 PERFORMANCE";
     else title.innerText = "📡 LIVE TRAFFIC (CLICKS)";
     updateDisplay();
 }
 
-// --- UPDATE TAMPILAN (MAHKOTA FIX) ---
 function updateDisplay() {
     mainTable.innerHTML = "";
     let kingId = "";
@@ -138,21 +116,20 @@ function updateDisplay() {
             if(renderData[0]) { kingId = renderData[0].click_id; topVal = renderData[0].total; }
         }
         renderData.forEach(d => {
-            const isKing = d.click_id === kingId;
+            const isKing = d.click_id === kingId && kingId !== "";
             const pValue = currentView === 'perf' ? d.total : parseFloat(d.payout);
             const row = mainTable.insertRow();
             if (isKing) row.style.background = "rgba(234, 179, 8, 0.05)";
             row.innerHTML = `<td class="p-4"><div class="flex items-center gap-2">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing?'text-yellow-500':'text-blue-500'} uppercase">${d.oid||'USR'}</span></div></td><td class="font-mono text-xs opacity-50 truncate">${d.click_id}</td><td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${(d.country||'id').toLowerCase()}.svg" class="w-5 shadow"><span class="text-[10px] font-bold uppercase">${d.country||'ID'}</span></div></td><td class="text-center text-[10px] opacity-50">${currentView==='perf' ? d.count+' LEADS' : new Date(d.timestamp).toLocaleTimeString()}</td><td class="text-right font-bold text-green-500">$${pValue.toFixed(2)}</td>`;
         });
         const m = document.getElementById('marquee-text');
-        if(m && kingId) m.innerHTML = `TOP RECORD: <span class="text-yellow-500">${kingId}</span> // VALUE: <span class="text-green-500">$${topVal.toFixed(2)}</span> // STATUS: SECURE`;
+        if(m && kingId) m.innerHTML = `🏆 KING: <span class="text-yellow-500">${kingId}</span> // VALUE: <span class="text-green-500">$${topVal.toFixed(2)}</span> // STATUS: SECURE`;
     } else {
         tableHead.innerHTML = `<tr><th width="40%">CLICK ID</th><th width="20%">COUNTRY</th><th width="20%">STATUS</th><th width="20%" class="text-right">TIME</th></tr>`;
         filterClicks();
     }
 }
 
-// --- FILTER CLICKS ---
 function filterClicks() {
     if(currentView !== 'traffic') return;
     const s = document.getElementById('clickSearch').value.toLowerCase();
@@ -165,16 +142,25 @@ function filterClicks() {
     });
 }
 
-// --- DATA HANDLING ---
+// HANDLER DATA (ZERO DELAY)
 function handleData(data, type, isNew = false) {
     if (type === 'LEAD') {
         leadsData.unshift(data);
         if (leadsData.length > 500) leadsData.pop();
-        updateDisplay();
+        
+        // UPDATE TAMPILAN DULU (Agar Nol Delay)
+        updateDisplay(); 
+
         if (isNew) {
-            playVoice(`Lead masuk. Payout ${data.payout} dolar.`);
-            sendSystemNotif(data.payout, data.click_id);
-            // Telegram Bot
+            // Baru jalankan notif & suara setelah tabel update
+            if (Notification.permission === "granted") {
+                new Notification("🔥 LEAD MASUK!", { body: `$${data.payout} - ID: ${data.click_id}` });
+            }
+            synth.cancel();
+            const utter = new SpeechSynthesisUtterance(`Lead ${data.payout} dolar.`);
+            utter.lang = 'id-ID';
+            synth.speak(utter);
+
             const botToken = "8294616704:AAF7M8RQkNKdkJeNvVdeGFG7zrU26vo7sao";
             const chatId = "-1002258281914";
             fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🔥 *LEAD MASUK!* 🔥\n\n🆔 ID: `' + data.click_id + '` \n💰 Payout: $' + data.payout)}&parse_mode=Markdown`).catch(e => {});
@@ -186,14 +172,12 @@ function handleData(data, type, isNew = false) {
     }
 }
 
-// --- THEME ---
 function toggleTheme() {
     const isLight = document.body.classList.toggle('light-mode');
     document.getElementById('sun-icon').classList.toggle('hidden', isLight);
     document.getElementById('moon-icon').classList.toggle('hidden', !isLight);
 }
 
-// --- RESET JAM 7 ---
 setInterval(() => {
     const now = new Date();
     if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
@@ -201,7 +185,6 @@ setInterval(() => {
     }
 }, 1000);
 
-// --- SYNC ---
 async function autoSync() {
     try {
         const [resL, resC] = await Promise.all([fetch('/get-history?t=' + Date.now()), fetch('/get-clicks?t=' + Date.now())]);
@@ -219,12 +202,7 @@ channel.bind('new-click', d => handleData(typeof d === 'string' ? JSON.parse(d) 
 
 autoSync();
 setInterval(autoSync, 10000);
-
-// REQ PERMISSION
-document.addEventListener('click', () => { 
-    if(Notification.permission!=='granted') Notification.requestPermission();
-    playVoice(""); // Trigger audio
-}, {once:true});
+document.addEventListener('click', () => { if(Notification.permission!=='granted') Notification.requestPermission(); }, {once:true});
 </script>
 </body>
 </html>
