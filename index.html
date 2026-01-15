@@ -22,8 +22,36 @@
         th { background: var(--card); color: var(--sub-text); font-size: 11px; padding: 14px 24px; border-bottom: 2px solid var(--border); text-align: left; }
         td { padding: 14px 24px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; }
         .theme-box { background: var(--bg); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; shrink-0; }
-        #sidebar { position: absolute; right: 24px; top: -85vh; width: 350px; height: 78vh; background: var(--card); border: 1px solid var(--border); z-index: 100; border-radius: 0 0 15px 15px; transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
-        #sidebar.open { top: 75px; }
+/* Cari dan ganti bagian ini di index.html */
+#sidebar { 
+    position: absolute; 
+    right: 24px; 
+    top: -100vh; /* Sembunyi jauh di atas */
+    width: 350px; 
+    /* Hapus height tetap (78vh), biarkan mengikuti konten */
+    background: var(--card); 
+    border: 1px solid var(--border); 
+    z-index: 100; 
+    border-radius: 0 0 15px 15px; 
+    transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); 
+    display: flex; 
+    flex-direction: column; 
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4); 
+    max-height: 85vh; /* Batas maksimal agar tidak tembus layar bawah */
+}
+
+#sidebar.open { 
+    top: 75px; 
+}
+
+/* Pastikan area stream tidak memaksa tinggi tertentu */
+#activity-stream { 
+    overflow-y: auto; 
+    padding: 16px; 
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Jarak antar kotak agar rapi */
+}
         .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
         .dot-red { background: #ff4444; } .dot-yellow { background: #ffbb33; animation-delay: 0.3s; } .dot-green { background: #00c851; animation-delay: 0.6s; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
@@ -64,7 +92,9 @@ const mainTable = document.getElementById('main-table-body');
 const stream = document.getElementById('activity-stream');
 const leadSound = document.getElementById('leadSound');
 let leadsData = [];
-const crownSvg = `<svg class="w-6 h-6 text-yellow-500 shrink-0 filter drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
+
+// Icons
+const crownSvg = `<svg class="w-6 h-6 text-yellow-500 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 const userSvg = `<svg class="w-6 h-6 text-gray-500/30 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
@@ -74,6 +104,7 @@ function toggleTheme() {
     document.getElementById('moon-icon').classList.toggle('hidden', !isL);
 }
 
+// Update Tabel Utama (Hanya untuk LEAD)
 function updateTable(latestId = null) {
     const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)), 0);
     mainTable.innerHTML = "";
@@ -91,14 +122,11 @@ function updateTable(latestId = null) {
     });
 }
 
-const displayedIds = new Set();
-
+// Fungsi Tambah Data ke Sidebar (Live Traffic)
 function addData(data, type, shouldPlaySound = true) {
-    // 1. Logika khusus untuk Tabel LEAD (Halaman Utama)
+    // 1. Jika LEAD, update tabel utama
     if (type === 'LEAD') {
         if (shouldPlaySound) { leadSound.currentTime = 0; leadSound.play().catch(() => {}); }
-        
-        // Cek agar baris tabel tidak duplikat berdasarkan click_id
         if (!leadsData.find(l => l.click_id === data.click_id)) {
             leadsData.unshift(data);
             if (leadsData.length > 50) leadsData.pop();
@@ -106,10 +134,9 @@ function addData(data, type, shouldPlaySound = true) {
         }
     }
     
-    // 2. Logika Sidebar (Live Traffic)
+    // 2. Buat Kotak di Sidebar
     const item = document.createElement('div');
-    // Tambahkan class penanda tipe (CLICK atau LEAD)
-    item.className = `p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center activity-${type}`;
+    item.className = `p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center activity-box type-${type}`;
     item.innerHTML = `
         <div>
             <span class="text-[9px] font-bold ${type === 'LEAD' ? 'text-green-500' : 'text-blue-500'} uppercase">${type}</span>
@@ -117,45 +144,52 @@ function addData(data, type, shouldPlaySound = true) {
         </div>
         <img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
     
-    // Masukkan data baru ke urutan paling atas di sidebar
     stream.prepend(item);
 
-    // 3. BATASI TAMPILAN (MAKSIMAL 5 CLICK)
-    const allClicks = stream.getElementsByClassName('activity-CLICK');
+    // 3. Batasi hanya 5 CLICK di Sidebar
+    const allClicks = stream.querySelectorAll('.type-CLICK');
     if (allClicks.length > 5) {
-        // Hapus kotak CLICK yang paling bawah (paling lama)
         stream.removeChild(allClicks[allClicks.length - 1]);
     }
-    
-    // Batasi juga LEAD di sidebar agar tidak terlalu panjang (misal maks 10)
-    const allLeads = stream.getElementsByClassName('activity-LEAD');
+
+    // 4. Batasi LEAD di Sidebar (agar tidak kepanjangan)
+    const allLeads = stream.querySelectorAll('.type-LEAD');
     if (allLeads.length > 10) {
         stream.removeChild(allLeads[allLeads.length - 1]);
     }
 }
-    
-    // Batasi tampilan Lead di sidebar maksimal 10
-    const allLeads = stream.getElementsByClassName('activity-LEAD');
-    while (allLeads.length > 10) { stream.removeChild(allLeads[allLeads.length - 1]); }
-}
 
-// 1. Ambil history Lead
+// --- INISIALISASI DATA SAAT RELOAD ---
+
+// Ambil history Lead
 fetch('/get-history').then(res => res.json()).then(h => { 
-    leadsData = h.slice(0, 50); 
-    updateTable(); 
-    [...h].reverse().forEach(ld => addData(ld, 'LEAD', false));
-});
+    if(Array.isArray(h)) {
+        leadsData = h.slice(0, 50); 
+        updateTable(); 
+        [...h].reverse().forEach(ld => addData(ld, 'LEAD', false));
+    }
+}).catch(e => console.log("History error:", e));
 
-// 2. Ambil history Click
+// Ambil history Click
 fetch('/get-clicks').then(res => res.json()).then(clicks => {
-    [...clicks].reverse().forEach(c => addData(c, 'CLICK', false));
-});
+    if(Array.isArray(clicks)) {
+        [...clicks].reverse().forEach(c => addData(c, 'CLICK', false));
+    }
+}).catch(e => console.log("Click history error:", e));
 
-// 3. Koneksi Pusher
+// --- PUSHER (REALTIME) ---
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
-channel.bind('new-lead', d => addData(d, 'LEAD'));
-channel.bind('new-click', d => addData(d, 'CLICK'));
+
+channel.bind('new-lead', d => {
+    const data = typeof d === 'string' ? JSON.parse(d) : d;
+    addData(data, 'LEAD');
+});
+
+channel.bind('new-click', d => {
+    const data = typeof d === 'string' ? JSON.parse(d) : d;
+    addData(data, 'CLICK');
+});
     </script>
 </body>
 </html>
