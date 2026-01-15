@@ -60,57 +60,78 @@
         </aside>
     </div>
     <script>
-        const mainTable = document.getElementById('main-table-body');
-        const stream = document.getElementById('activity-stream');
-        const leadSound = document.getElementById('leadSound');
-        let leadsData = [];
-        const crownSvg = `<svg class="w-6 h-6 text-yellow-500 shrink-0 filter drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
-        const userSvg = `<svg class="w-6 h-6 text-gray-500/30 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
+const mainTable = document.getElementById('main-table-body');
+const stream = document.getElementById('activity-stream');
+const leadSound = document.getElementById('leadSound');
+let leadsData = [];
+const crownSvg = `<svg class="w-6 h-6 text-yellow-500 shrink-0 filter drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
+const userSvg = `<svg class="w-6 h-6 text-gray-500/30 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-        function toggleTheme() {
-            const isL = document.body.classList.toggle('light-mode');
-            document.getElementById('sun-icon').classList.toggle('hidden', isL);
-            document.getElementById('moon-icon').classList.toggle('hidden', !isL);
-        }
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleTheme() {
+    const isL = document.body.classList.toggle('light-mode');
+    document.getElementById('sun-icon').classList.toggle('hidden', isL);
+    document.getElementById('moon-icon').classList.toggle('hidden', !isL);
+}
 
-        function updateTable(latestId = null) {
-            const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)), 0);
-            mainTable.innerHTML = "";
-            leadsData.forEach((data, index) => {
-                const isKing = parseFloat(data.payout) === maxPayout && maxPayout > 0;
-                const row = mainTable.insertRow();
-                if (latestId && index === 0) row.classList.add('row-animate');
-                row.innerHTML = `
-                    <td><div class="flex items-center gap-4">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid}</span></div></td>
-                    <td class="text-gray-400 font-medium truncate">${data.click_id}</td>
-                    <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-6 rounded-sm"><span class="font-bold text-gray-400 uppercase text-xs">${data.country || 'ID'}</span></div></td>
-                    <td style="text-align: center;" class="text-gray-500 text-xs font-bold">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
-                    <td style="text-align: right;" class="font-bold text-green-500 text-base">$${parseFloat(data.payout).toFixed(2)}</td>
-                `;
-            });
-        }
+function updateTable(latestId = null) {
+    const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)), 0);
+    mainTable.innerHTML = "";
+    leadsData.forEach((data, index) => {
+        const isKing = parseFloat(data.payout) === maxPayout && maxPayout > 0;
+        const row = mainTable.insertRow();
+        if (latestId && index === 0) row.classList.add('row-animate');
+        row.innerHTML = `
+            <td><div class="flex items-center gap-4">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid}</span></div></td>
+            <td class="text-gray-400 font-medium truncate">${data.click_id}</td>
+            <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-6 rounded-sm"><span class="font-bold text-gray-400 uppercase text-xs">${data.country || 'ID'}</span></div></td>
+            <td style="text-align: center;" class="text-gray-500 text-xs font-bold">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
+            <td style="text-align: right;" class="font-bold text-green-500 text-base">$${parseFloat(data.payout).toFixed(2)}</td>
+        `;
+    });
+}
 
-        function addData(data, type) {
-            if (type === 'LEAD') {
-                leadSound.currentTime = 0;
-                leadSound.play().catch(() => {});
-                leadsData.unshift(data);
-                if (leadsData.length > 50) leadsData.pop();
-                updateTable(data.click_id);
-            }
-            const item = document.createElement('div');
-            item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center";
-            item.innerHTML = `<div><span class="text-[9px] font-bold ${type === 'LEAD' ? 'text-green-500' : 'text-blue-500'} uppercase">${type}</span><div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
-            stream.prepend(item);
-            if (stream.children.length > 25) stream.lastChild.remove();
-        }
+function addData(data, type, shouldPlaySound = true) {
+    if (type === 'LEAD') {
+        if (shouldPlaySound) { leadSound.currentTime = 0; leadSound.play().catch(() => {}); }
+        leadsData.unshift(data);
+        if (leadsData.length > 50) leadsData.pop();
+        updateTable(data.click_id);
+    }
+    
+    const item = document.createElement('div');
+    // Beri ID unik agar bisa dihitung jumlahnya
+    item.className = `p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center activity-${type}`;
+    item.innerHTML = `<div><span class="text-[9px] font-bold ${type === 'LEAD' ? 'text-green-500' : 'text-blue-500'} uppercase">${type}</span><div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
+    
+    stream.prepend(item);
 
-        fetch('/get-history').then(res => res.json()).then(h => { leadsData = h.reverse(); updateTable(); });
-        const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
-        const channel = pusher.subscribe('my-channel');
-        channel.bind('new-lead', d => addData(d, 'LEAD'));
-        channel.bind('new-click', d => addData(d, 'CLICK'));
+    // Filter agar CLICK hanya tampil maksimal 5 di sidebar
+    const allClicks = stream.getElementsByClassName('activity-CLICK');
+    if (allClicks.length > 5) { stream.removeChild(allClicks[allClicks.length - 1]); }
+    
+    // Batasi LEAD juga agar tidak memenuhi sidebar (misal max 15)
+    const allLeads = stream.getElementsByClassName('activity-LEAD');
+    if (allLeads.length > 15) { stream.removeChild(allLeads[allLeads.length - 1]); }
+}
+
+// Load riwayat saat buka web
+fetch('/get-history').then(res => res.json()).then(h => { 
+    leadsData = h.slice(0, 50); 
+    updateTable(); 
+    // Tampilkan lead di sidebar
+    [...h].reverse().forEach(ld => addData(ld, 'LEAD', false));
+});
+
+fetch('/get-clicks').then(res => res.json()).then(clicks => {
+    // Tampilkan click lama dari KV ke sidebar (maks 5)
+    [...clicks].reverse().forEach(c => addData(c, 'CLICK', false));
+});
+
+const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
+const channel = pusher.subscribe('my-channel');
+channel.bind('new-lead', d => addData(d, 'LEAD'));
+channel.bind('new-click', d => addData(d, 'CLICK'));
     </script>
 </body>
 </html>
