@@ -3,119 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R.O.W.X Interface</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>R.O.W.X PHEI 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; }
-        .light-mode { --bg: #ffffff; --card: #f6f8fa; --text: #24292f; --border: #d0d7de; }
-        
+        :root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --sub-text: #8b949e; }
+        .light-mode { --bg: #ffffff; --card: #f6f8fa; --text: #24292f; --border: #d0d7de; --sub-text: #57606a; }
         body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); overflow: hidden; transition: 0.3s; }
-        .font-rowx { font-family: 'Orbitron', sans-serif; letter-spacing: 0.1em; }
-        
-        /* Navbar - Garis Lurus Presisi */
-        nav { display: flex; align-items: center; padding: 0 24px; height: 64px; background: var(--card); border-bottom: 1px solid var(--border); position: relative; }
-        
-        /* Marquee Container - Fix Bengkok */
-        .marquee-container { 
-            flex: 1; 
-            height: 100%; /* Biar garis pembatas full dari atas ke bawah navbar */
-            overflow: hidden; 
-            margin: 0 20px; 
-            border-left: 1px solid var(--border); 
-            border-right: 1px solid var(--border); 
-            display: flex;
-            align-items: center;
-            white-space: nowrap;
-        }
-        .marquee-text { 
-            display: inline-block; 
-            animation: marquee 25s linear infinite; 
-            font-size: 11px; 
-            font-weight: 700; 
-            color: #8b949e;
-        }
+        .font-rowx { font-family: 'Orbitron', sans-serif; }
+        nav { display: flex; align-items: center; padding: 0 24px; height: 75px; background: var(--card); border-bottom: 1px solid var(--border); }
+        .logo-area { display: flex; flex-direction: column; line-height: 1; shrink-0; }
+        .phei-text { font-family: 'Orbitron', sans-serif; font-size: 7px; letter-spacing: 0.12em; color: rgba(139, 148, 158, 0.4); font-weight: 700; margin-top: 5px; }
+        .marquee-container { flex: 1; height: 100%; overflow: hidden; margin: 0 20px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); display: flex; align-items: center; white-space: nowrap; }
+        .marquee-text { display: inline-block; animation: marquee 25s linear infinite; font-size: 11px; font-weight: 700; color: var(--sub-text); }
         @keyframes marquee { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
-
-        /* Tabel - No Meleber */
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th { background: var(--card); color: #8b949e; font-size: 11px; padding: 12px 24px; border-bottom: 2px solid var(--border); text-align: left; }
-        td { padding: 12px 24px; border-bottom: 1px solid var(--border); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-        /* Floating Sidebar 3/4 */
-        #sidebar { 
-            position: absolute; right: 24px; top: -85vh; 
-            width: 340px; height: 75vh; 
-            background: var(--card); border: 1px solid var(--border); 
-            z-index: 100; border-radius: 0 0 12px 12px;
-            transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1);
-            display: flex; flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        #sidebar.open { top: 64px; }
-        
-        .theme-box { background: var(--bg); border: 1px solid var(--border); padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; }
-        .entry-new { animation: slideDown 0.4s ease-out forwards; }
-        @keyframes slideDown { from { transform: translateY(-15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        th { background: var(--card); color: var(--sub-text); font-size: 11px; padding: 14px 24px; border-bottom: 2px solid var(--border); text-align: left; }
+        td { padding: 14px 24px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; }
+        .theme-box { background: var(--bg); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; shrink-0; }
+        #sidebar { position: absolute; right: 24px; top: -85vh; width: 350px; height: 78vh; background: var(--card); border: 1px solid var(--border); z-index: 100; border-radius: 0 0 15px 15px; transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
+        #sidebar.open { top: 75px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        .dot-red { background: #ff4444; } .dot-yellow { background: #ffbb33; animation-delay: 0.3s; } .dot-green { background: #00c851; animation-delay: 0.6s; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .row-animate { animation: rowIn 1.2s ease-out; }
+        @keyframes rowIn { from { background: rgba(59, 130, 246, 0.25); } to { background: transparent; } }
     </style>
 </head>
 <body class="dark-mode">
-
     <audio id="leadSound" src="https://kokoya.pages.dev/kaya.mp3" preload="auto"></audio>
-
     <div class="flex flex-col h-screen relative">
         <nav>
-            <span class="text-xl font-rowx text-blue-500 shrink-0">R.O.W.X</span>
-            
-            <div class="marquee-container">
-                <div class="marquee-text uppercase">
-                    SYSTEM: OPERATIONAL // NODE: ASIA-1 // ENCRYPTION: ACTIVE // FLOW: SECURE // NO LATENCY DETECTED // MONITORING LIVE TRAFFIC...
-                </div>
+            <div class="logo-area">
+                <span class="text-2xl font-bold font-rowx text-blue-500">R.O.W.X</span>
+                <span class="phei-text">PHEI EDITION 2026</span>
             </div>
-
+            <div class="marquee-container"><div class="marquee-text uppercase">NODE: ASIA-1 // STATUS: SECURE // EDITION: PHEI 2026 // LIVE MONITORING...</div></div>
             <div class="flex items-center gap-4">
-                <div class="theme-box">
-                    <button onclick="toggleTheme()" class="text-gray-400 hover:text-blue-500">
-                        <svg id="sun-icon" class="w-4 h-4 block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2.5"></path></svg>
-                        <svg id="moon-icon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-width="2.5"></path></svg>
-                    </button>
-                </div>
-                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                </button>
+                <div class="theme-box"><button onclick="toggleTheme()" class="w-full h-full flex items-center justify-center text-gray-400 hover:text-blue-500"><svg id="sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 block"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2"></path></svg><svg id="moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 hidden"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-width="2"></path></svg></button></div>
+                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg></button>
             </div>
         </nav>
-
         <main class="flex-1 overflow-y-auto">
             <table>
-                <thead>
-                    <tr>
-                        <th style="width: 20%;">TEAM / OID</th>
-                        <th style="width: 35%;">CLICK ID</th>
-                        <th style="width: 15%;">LOC</th>
-                        <th style="width: 15%;" class="text-center">TIME</th>
-                        <th style="width: 15%;" class="text-right">PAYOUT</th>
-                    </tr>
-                </thead>
+                <thead><tr><th style="width: 22%;">TEAM / OID</th><th style="width: 33%;">CLICK ID</th><th style="width: 15%;">COUNTRY</th><th style="width: 15%; text-align: center;">TIME</th><th style="width: 15%; text-align: right;">PAYOUT</th></tr></thead>
                 <tbody id="main-table-body"></tbody>
             </table>
         </main>
-
         <aside id="sidebar">
-            <div class="p-4 border-b border-[var(--border)] flex justify-between items-center bg-[var(--card)]">
-                <span class="text-[10px] font-bold uppercase tracking-widest text-blue-500">Live Traffic Feed</span>
-                <button onclick="toggleSidebar()" class="text-gray-500 hover:text-white text-xl">&times;</button>
+            <div class="p-5 border-b border-[var(--border)] flex justify-between items-center bg-[var(--card)]">
+                <div class="flex items-center gap-3"><span class="text-[10px] font-bold uppercase tracking-widest text-blue-500">Live Traffic</span><div class="flex gap-1.5"><span class="status-dot dot-red"></span><span class="status-dot dot-yellow"></span><span class="status-dot dot-green"></span></div></div>
+                <button onclick="toggleSidebar()" class="text-gray-500 text-2xl">&times;</button>
             </div>
             <div id="activity-stream" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
         </aside>
     </div>
-
     <script>
         const mainTable = document.getElementById('main-table-body');
         const stream = document.getElementById('activity-stream');
         const leadSound = document.getElementById('leadSound');
         let leadsData = [];
+        const crownSvg = `<svg class="w-6 h-6 text-yellow-500 shrink-0 filter drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
+        const userSvg = `<svg class="w-6 h-6 text-gray-500/30 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
         function toggleTheme() {
@@ -124,61 +74,39 @@
             document.getElementById('moon-icon').classList.toggle('hidden', !isL);
         }
 
-        // SVG Mahkota (Crown) Murni
-        const crownSvg = `<svg class="w-5 h-5 text-yellow-500 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
-        const userSvg = `<svg class="w-5 h-5 text-gray-600 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/></svg>`;
-
-        function updateTable() {
+        function updateTable(latestId = null) {
             const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)), 0);
             mainTable.innerHTML = "";
-            
-            leadsData.forEach(data => {
+            leadsData.forEach((data, index) => {
                 const isKing = parseFloat(data.payout) === maxPayout && maxPayout > 0;
                 const row = mainTable.insertRow();
-                row.className = "hover:bg-blue-500/5 transition-colors entry-new";
+                if (latestId && index === 0) row.classList.add('row-animate');
                 row.innerHTML = `
-                    <td>
-                        <div class="flex items-center gap-3">
-                            ${isKing ? crownSvg : userSvg}
-                            <span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid}</span>
-                        </div>
-                    </td>
-                    <td class="font-mono text-xs text-gray-500">${data.click_id}</td>
-                    <td>
-                        <div class="flex items-center gap-2">
-                            <img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 rounded-sm">
-                            <span class="font-bold text-gray-500 uppercase">${data.country || 'ID'}</span>
-                        </div>
-                    </td>
-                    <td class="text-center text-gray-400 text-xs font-bold">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
-                    <td class="text-right font-bold text-green-500 text-base">$${parseFloat(data.payout).toFixed(2)}</td>
+                    <td><div class="flex items-center gap-4">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid}</span></div></td>
+                    <td class="text-gray-400 font-medium truncate">${data.click_id}</td>
+                    <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-6 rounded-sm"><span class="font-bold text-gray-400 uppercase text-xs">${data.country || 'ID'}</span></div></td>
+                    <td style="text-align: center;" class="text-gray-500 text-xs font-bold">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
+                    <td style="text-align: right;" class="font-bold text-green-500 text-base">$${parseFloat(data.payout).toFixed(2)}</td>
                 `;
             });
         }
 
         function addData(data, type) {
             if (type === 'LEAD') {
-                leadSound.play().catch(e => console.log("Sound blocked by browser"));
+                leadSound.currentTime = 0;
+                leadSound.play().catch(() => {});
                 leadsData.unshift(data);
                 if (leadsData.length > 50) leadsData.pop();
-                updateTable();
+                updateTable(data.click_id);
             }
-            
             const item = document.createElement('div');
-            item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] entry-new flex justify-between items-center";
-            item.innerHTML = `
-                <div class="flex flex-col">
-                    <span class="text-[9px] font-bold text-blue-500 uppercase">${type}</span>
-                    <span class="text-[10px] text-gray-500 font-mono truncate w-40">${data.click_id}</span>
-                </div>
-                <img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5">
-            `;
+            item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center";
+            item.innerHTML = `<div><span class="text-[9px] font-bold ${type === 'LEAD' ? 'text-green-500' : 'text-blue-500'} uppercase">${type}</span><div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
             stream.prepend(item);
             if (stream.children.length > 25) stream.lastChild.remove();
         }
 
         fetch('/get-history').then(res => res.json()).then(h => { leadsData = h.reverse(); updateTable(); });
-
         const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
         const channel = pusher.subscribe('my-channel');
         channel.bind('new-lead', d => addData(d, 'LEAD'));
