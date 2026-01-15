@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Dashboard - Shared Access</title>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white p-8">
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-2xl font-bold text-sky-400 mb-6">🚀 Realtime Leads (Shared)</h1>
+        <div class="bg-slate-800 rounded-lg overflow-hidden border border-slate-700">
+            <table class="w-full text-left">
+                <thead class="bg-slate-700 text-sky-300">
+                    <tr>
+                        <th class="p-4">Click ID</th>
+                        <th class="p-4">Payout</th>
+                        <th class="p-4">OID</th>
+                        <th class="p-4">Country</th>
+                    </tr>
+                </thead>
+                <tbody id="lead-list" class="divide-y divide-slate-700"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const tbody = document.getElementById('lead-list');
+
+        function appendRow(data, isNew = true) {
+            const row = tbody.insertRow(0);
+            if(isNew) row.classList.add('bg-sky-900/30');
+            row.innerHTML = `<td class="p-4 text-xs">${data.click_id}</td><td class="p-4 text-emerald-400 font-bold">$${data.payout}</td><td class="p-4">${data.oid}</td><td class="p-4">${data.country}</td>`;
+        }
+
+        // AMBIL DATA LAMA DARI CLOUDFLARE KV
+        fetch('/get-history')
+            .then(res => res.json())
+            .then(history => {
+                history.reverse().forEach(item => appendRow(item, false));
+            });
+
+        // TERIMA DATA BARU DARI PUSHER
+        const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
+        const channel = pusher.subscribe('my-channel');
+        channel.bind('new-lead', data => appendRow(data));
+    </script>
+</body>
+</html>
