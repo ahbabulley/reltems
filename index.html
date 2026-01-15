@@ -88,124 +88,117 @@
         </aside>
     </div>
 <script>
+// Konfigurasi Dasar
 const mainTable = document.getElementById('main-table-body');
 const stream = document.getElementById('activity-stream');
-
-// 1. SETTING AUDIO & VOICE
 const leadSound = new Audio('https://kokoya.pages.dev/kaya.mp3');
 const synth = window.speechSynthesis;
 
-// Meminta izin Notifikasi Sistem saat web dibuka
-if (Notification.permission !== "granted") {
-    Notification.requestPermission();
-}
+let leadsData = [];
+let processedClickIds = new Set(); // Biar click ga double
 
-// 2. PANCINGAN IZIN (KLIK DI MANA SAJA SETELAH REFRESH)
-document.addEventListener('click', function() {
-    leadSound.play().then(() => {
-        leadSound.pause(); 
-        leadSound.currentTime = 0;
-    }).catch(() => {});
+// 1. Pancing Suara (Wajib Klik 1x di Layar setelah buka web)
+document.addEventListener('click', () => {
+    leadSound.play().then(() => { leadSound.pause(); leadSound.currentTime = 0; }).catch(()=>{});
 }, { once: true });
 
-let leadsData = [];
-let displayedClickIds = new Set(); // Penyaring agar click tidak double
-
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-
-// 3. FUNGSI BICARA & NOTIFIKASI
-function notifyMe(title, message) {
-    // Suara Google
-    const utter = new SpeechSynthesisUtterance(message);
-    utter.lang = 'id-ID'; // Bahasa Indonesia
-    utter.rate = 1.0;
-    synth.speak(utter);
-
-    // Notifikasi Windows/Chrome
+// 2. Fungsi Suara Google & Notifikasi
+function speakAndNotify(title, msg) {
+    // Notifikasi Chrome/Windows
     if (Notification.permission === "granted") {
-        new Notification(title, { body: message, icon: 'https://flagicons.lipis.dev/flags/4x3/id.svg' });
+        new Notification(title, { body: msg });
     }
+    // Suara Google
+    const utter = new SpeechSynthesisUtterance(msg);
+    utter.lang = 'id-ID';
+    synth.speak(utter);
 }
 
-// 4. UPDATE TABEL
-function updateTable(latestId = null) {
-    if (!leadsData || leadsData.length === 0) return;
-    const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)), 0);
+// 3. Update Tabel Lead Utama
+function updateTable() {
     mainTable.innerHTML = "";
-    leadsData.forEach((data, index) => {
+    leadsData.forEach((data) => {
         const row = mainTable.insertRow();
-        if (latestId && data.click_id === latestId) row.classList.add('row-animate');
         row.innerHTML = `
-            <td class="p-3 font-bold text-blue-500 uppercase">${data.oid}</td>
+            <td class="p-3 font-bold text-blue-500 uppercase">${data.oid || 'USER'}</td>
             <td class="text-gray-400 font-mono">${data.click_id}</td>
             <td><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-6"></td>
-            <td class="text-gray-500">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
-            <td class="font-bold text-green-500">$${parseFloat(data.payout).toFixed(2)}</td>
+            <td class="text-gray-500 text-xs">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
+            <td class="font-bold text-green-500 text-right">$${parseFloat(data.payout).toFixed(2)}</td>
         `;
     });
 }
 
-// 5. LOGIKA TAMBAH DATA (LEAD & CLICK)
-function addData(data, type, isNew = false) {
+// 4. Logika Utama Data Masuk
+function handleData(data, type, isNew = false) {
     if (type === 'LEAD') {
-        const isExist = leadsData.some(l => l.click_id === data.click_id);
-        if (!isExist) {
+        // Cek apakah lead sudah ada
+        if (!leadsData.some(l => l.click_id === data.click_id)) {
             leadsData.unshift(data);
             if (leadsData.length > 50) leadsData.pop();
-            updateTable(data.click_id);
-            
+            updateTable();
             if (isNew) {
-                leadSound.play().catch(() => {});
-                notifyMe("LEAD BARU!", `Ada lead masuk dari ID ${data.click_id}`);
+                leadSound.play().catch(()=>{});
+                speakAndNotify("LEAD BARU", "Ada uang masuk dari ID " + data.click_id.substring(0,5));
             }
         }
     } else if (type === 'CLICK') {
-        // Cek agar tidak jalan terus (Hanya proses jika ID belum ada di layar)
-        if (!displayedClickIds.has(data.click_id)) {
-            displayedClickIds.add(data.click_id);
+        // Cek apakah click sudah ada di tampilan
+        if (!processedClickIds.has(data.click_id)) {
+            processedClickIds.add(data.click_id);
             
             const item = document.createElement('div');
-            item.className = `p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center type-CLICK`;
-            item.innerHTML = `<div><span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span><div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
+            item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] flex justify-between items-center type-CLICK mb-2";
+            item.innerHTML = `
+                <div>
+                    <span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span>
+                    <div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div>
+                </div>
+                <img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5">`;
             
             stream.prepend(item);
-            
-            // Batasi 5 kotak di sidebar
-            const allClicks = stream.querySelectorAll('.type-CLICK');
-            if (allClicks.length > 5) {
-                const removedId = allClicks[allClicks.length - 1].querySelector('.font-mono').innerText;
-                displayedClickIds.delete(removedId);
-                stream.removeChild(allClicks[allClicks.length - 1]);
+
+            // Batasi 5 kotak saja
+            const boxes = stream.querySelectorAll('.type-CLICK');
+            if (boxes.length > 5) {
+                // Hapus ID dari tracker sebelum hapus kotak
+                const lastId = boxes[boxes.length-1].querySelector('.font-mono').innerText;
+                processedClickIds.delete(lastId);
+                stream.removeChild(boxes[boxes.length-1]);
             }
 
             if (isNew) {
-                notifyMe("CLICK BARU", `Klik baru terdeteksi. ID: ${data.click_id}`);
+                speakAndNotify("CLICK BARU", "Klik baru terdeteksi");
             }
         }
     }
 }
 
-// 6. SYNC DATA
-async function syncAll() {
+// 5. Fungsi Ambil Data dari Server
+async function loadFromServer() {
     try {
-        const [resL, resC] = await Promise.all([fetch('/get-history'), fetch('/get-clicks')]);
+        const resL = await fetch('/get-history');
         const leads = await resL.json();
+        if (Array.isArray(leads)) leads.reverse().forEach(l => handleData(l, 'LEAD', false));
+
+        const resC = await fetch('/get-clicks');
         const clicks = await resC.json();
-        
-        if (Array.isArray(leads)) leads.reverse().forEach(l => addData(l, 'LEAD', false));
-        if (Array.isArray(clicks)) clicks.reverse().forEach(c => addData(c, 'CLICK', false));
-    } catch (e) {}
+        if (Array.isArray(clicks)) clicks.reverse().forEach(c => handleData(c, 'CLICK', false));
+    } catch (e) { console.error("Gagal ambil data"); }
 }
 
-// Interval 2 detik untuk cek data baru
-setInterval(syncAll, 2000);
-syncAll();
+// 6. Jalankan Sistem
+if (Notification.permission !== "granted") Notification.requestPermission();
+loadFromServer(); // Ambil saat pertama buka
+setInterval(loadFromServer, 3000); // Cek data baru tiap 3 detik
 
-// 7. PUSHER (REALTIME)
+// 7. Pusher (Instan)
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
-channel.bind('new-lead', d => addData(typeof d === 'string' ? JSON.parse(d) : d, 'LEAD', true));
-channel.bind('new-click', d => addData(typeof d === 'string' ? JSON.parse(d) : d, 'CLICK', true));
+channel.bind('new-lead', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'LEAD', true));
+channel.bind('new-click', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'CLICK', true));
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 </script>
 </body>
 </html>
