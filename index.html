@@ -91,78 +91,73 @@
 <script>
 const mainTable = document.getElementById('main-table-body');
 const stream = document.getElementById('activity-stream');
+const marqueeContainer = document.getElementById('marquee-text'); // Pastikan ada ID ini di elemen marquee Anda
 const synth = window.speechSynthesis;
 
 let leadsData = [];
-let processedClickIds = new Set(); 
 
-// 1. FUNGSI AUTO RESET JAM 7 PAGI
+// 1. AUTO RESET JAM 7 PAGI
 function checkAutoReset() {
     const now = new Date();
-    // Jika jam 7 menit 0 detik 0
     if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
-        console.log("Sistem Reset Otomatis...");
         leadsData = [];
-        processedClickIds.clear();
         mainTable.innerHTML = "";
         stream.innerHTML = "";
-        
-        // Notif ke Google Voice kalau sistem reset
-        const utter = new SpeechSynthesisUtterance("Sistem telah di reset otomatis untuk hari ini.");
-        utter.lang = 'id-ID';
-        synth.speak(utter);
+        if(marqueeContainer) marqueeContainer.innerText = "WAITING FOR FIRST LEAD...";
     }
 }
-// Jalankan pengecekan setiap detik
 setInterval(checkAutoReset, 1000);
 
-// 2. FUNGSI LEAD (GOOGLE VOICE + TELEGRAM + NOTIF)
+// 2. FUNGSI ANNOUNCE & TELEGRAM
 async function announceLead(clickId, payout, country) {
     synth.cancel(); 
     const spelledId = clickId.substring(0, 6).split('').join(' ');
     const utter = new SpeechSynthesisUtterance(`Lead baru. Klik I D. ${spelledId}. Payout ${payout} dolar.`);
     utter.lang = 'id-ID';
-    utter.rate = 1.0; 
     synth.speak(utter);
 
     if (Notification.permission === "granted") {
-        new Notification("LEAD BARU: " + clickId, {
-            body: `ID: ${clickId}\nPayout: $${payout}`,
-            icon: 'https://cdn-icons-png.flaticon.com/512/1162/1162250.png'
-        });
+        new Notification("LEAD BARU: " + clickId, { body: `Payout: $${payout}` });
     }
 
     const botToken = "8294616704:AAF7M8RQkNKdkJeNvVdeGFG7zrU26vo7sao";
     const chatId = "-1002258281914";
-    const pesan = `🔥 *LEAD MASUK!* 🔥\n\n🆔 *ID:* \`${clickId}\` \n💰 *Payout:* $${payout}\n🌍 *Negara:* ${country || 'ID'}\n✅ *Status:* Berhasil`;
-    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(pesan)}&parse_mode=Markdown`;
-    
-    fetch(telegramUrl).catch(e => console.error("Telegram Error"));
+    const pesan = `🔥 *LEAD MASUK!* 🔥\n\n🆔 *ID:* \`${clickId}\` \n💰 *Payout:* $${payout}\n🌍 *Negara:* ${country || 'ID'}`;
+    fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(pesan)}&parse_mode=Markdown`).catch(e => {});
 }
 
-// 3. SVG ICONS & UPDATE TABEL
+// 3. SVG ICONS
 const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
-const userSvg = `<svg class="w-6 h-6" style="color: var(--text); opacity: 0.7;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
+const userSvg = `<svg class="w-6 h-6" style="color: var(--text); opacity: 0.5;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
+// 4. UPDATE TABEL & MARQUEE (LOGIKA MAHKOTA BERDASARKAN ID)
 function updateTable() {
     if (leadsData.length === 0) return;
 
-    // 1. CARI PAYOUT TERTINGGI (Pastikan dikonversi ke angka)
-    const allPayouts = leadsData.map(l => parseFloat(l.payout) || 0);
-    const maxPayout = Math.max(...allPayouts);
+    // Cari Click ID yang punya payout tertinggi
+    let topClickId = "";
+    let maxPayoutFound = 0;
+
+    leadsData.forEach(l => {
+        const p = parseFloat(l.payout) || 0;
+        if (p >= maxPayoutFound) {
+            maxPayoutFound = p;
+            topClickId = l.click_id;
+        }
+    });
+
+    // Update Marquee High Payout
+    if (marqueeContainer && topClickId) {
+        marqueeContainer.innerHTML = `HIGH PAYOUT TODAY <span class="text-yellow-500">[ ${topClickId} ]</span> WITH $${maxPayoutFound.toFixed(2)}`;
+    }
 
     mainTable.innerHTML = "";
-    
     leadsData.forEach((data) => {
-        const currentPayout = parseFloat(data.payout) || 0;
-        
-        // 2. CEK APAKAH BARIS INI PEMEGANG REKOR (Mahkota)
-        // Syarat: payout sama dengan maxPayout DAN maxPayout bukan nol
-        const isKing = currentPayout === maxPayout && maxPayout > 0;
+        // MAHKOTA DIBERIKAN JIKA CLICK_ID NYA SAMA DENGAN TOP_CLICK_ID
+        const isKing = data.click_id === topClickId && maxPayoutFound > 0;
         
         const countryCode = (data.country || 'ID').toUpperCase();
         const row = mainTable.insertRow();
-        
         row.innerHTML = `
             <td class="p-3">
                 <div class="flex items-center gap-3">
@@ -173,17 +168,17 @@ function updateTable() {
             <td class="text-gray-400 font-mono text-xs">${data.click_id}</td>
             <td>
                 <div class="flex items-center gap-2">
-                    <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6 shadow-sm">
+                    <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6">
                     <span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span>
                 </div>
             </td>
             <td class="text-gray-500 text-[10px] text-center">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
-            <td class="font-bold text-green-500 text-right text-lg">$${currentPayout.toFixed(2)}</td>
+            <td class="font-bold text-green-500 text-right text-lg">$${parseFloat(data.payout).toFixed(2)}</td>
         `;
     });
 }
 
-// 4. HANDLE DATA & SYNC
+// 5. HANDLE DATA & PUSHER
 function handleData(data, type, isNew = false) {
     if (type === 'LEAD') {
         leadsData.unshift(data);
@@ -194,8 +189,15 @@ function handleData(data, type, isNew = false) {
         const countryCode = (data.country || 'ID').toUpperCase();
         const item = document.createElement('div');
         item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] flex justify-between items-center mb-2 row-animate type-CLICK";
-        item.innerHTML = `<div><span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span><div class="text-sm text-gray-400 font-mono truncate w-40">${data.click_id}</div></div>
-            <div class="flex items-center gap-2"><span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span><img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6"></div>`;
+        item.innerHTML = `
+            <div>
+                <span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span>
+                <div class="text-sm text-gray-400 font-mono truncate w-40">${data.click_id}</div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span>
+                <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6">
+            </div>`;
         stream.prepend(item);
         if (stream.children.length > 5) stream.lastChild.remove();
     }
@@ -208,14 +210,12 @@ async function autoSync() {
         const clicks = await resC.json();
         if (Array.isArray(leads)) { leadsData = leads.slice(0, 50); updateTable(); }
         if (Array.isArray(clicks)) { 
-            const boxes = stream.querySelectorAll('.type-CLICK');
-            if (boxes.length < 5) clicks.reverse().forEach(c => handleData(c, 'CLICK', false));
+            if (stream.querySelectorAll('.type-CLICK').length < 5) clicks.reverse().forEach(c => handleData(c, 'CLICK', false));
         }
     } catch (e) {}
 }
 
-// 5. START
-if (Notification.permission !== "granted") Notification.requestPermission();
+initPermissions();
 autoSync();
 setInterval(autoSync, 2000);
 
