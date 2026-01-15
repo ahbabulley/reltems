@@ -11,49 +11,60 @@
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --sub-text: #8b949e; }
-        .light-mode { --bg: #ffffff; --card: #f6f8fa; --text: #24292f; --border: #d0d7de; --sub-text: #57606a; }
+        :root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --sub-text: #8b949e; --accent: #3b82f6; }
+        .light-mode { --bg: #ffffff; --card: #f6f8fa; --text: #24292f; --border: #d0d7de; --sub-text: #57606a; --accent: #2563eb; }
+        
         body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); overflow: hidden; transition: 0.3s; }
         .font-rowx { font-family: 'Orbitron', sans-serif; }
         
         nav { display: flex; align-items: center; padding: 0 24px; height: 75px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
         
-        /* CSS MARQUEE SMOOTH */
         .marquee-container { flex: 1; height: 100%; overflow: hidden; margin: 0 20px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); display: flex; align-items: center; position: relative; }
         .marquee-text { 
-            display: inline-block; 
-            white-space: nowrap; 
-            position: absolute;
-            animation: marquee 25s linear infinite; 
-            font-size: 11px; 
-            font-weight: 700; 
-            color: var(--sub-text); 
-            padding-left: 100%;
-            will-change: transform;
+            display: inline-block; white-space: nowrap; position: absolute;
+            animation: marquee 25s linear infinite; font-size: 11px; font-weight: 700; 
+            color: var(--sub-text); padding-left: 100%; will-change: transform;
         }
-        @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
-        }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
         table { width: 100%; border-collapse: collapse; }
         th { background: var(--card); color: var(--sub-text); font-size: 10px; padding: 12px 24px; border-bottom: 2px solid var(--border); text-align: left; text-transform: uppercase; letter-spacing: 1px; }
-        td { padding: 12px 24px; border-bottom: 1px solid var(--border); font-size: 13px; }
-        .theme-box { background: var(--bg); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        #nav-popup-menu { backdrop-filter: blur(10px); background: rgba(22, 27, 34, 0.95); box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        td { padding: 12px 24px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text); }
+        
+        .theme-box { background: var(--card); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        #nav-popup-menu { backdrop-filter: blur(10px); background: rgba(22, 27, 34, 0.95); box-shadow: 0 10px 40px rgba(0,0,0,0.6); color: white; }
         .search-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; font-size: 11px; outline: none; width: 220px; }
         
-        #voice-overlay { position: fixed; inset: 0; background: rgba(13, 17, 23, 0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+        /* LOGIN OVERLAY */
+        #login-overlay { 
+            position: fixed; inset: 0; background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); 
+            z-index: 9999; display: flex; align-items: center; justify-content: center; 
+        }
+        .login-card { 
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 40px; border-radius: 24px;
+            width: 100%; max-width: 400px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body class="dark-mode">
 
-    <div id="voice-overlay">
-        <h1 class="text-blue-500 font-rowx text-2xl animate-pulse">PHEI SYSTEM 2026</h1>
-        <button onclick="enableSystem()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95">
-            AKTIFKAN MONITORING & SUARA
-        </button>
-        <p class="text-[10px] text-gray-500">Wajib diklik agar notifikasi & suara Google aktif</p>
+    <div id="login-overlay">
+        <div class="login-card">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold font-rowx text-blue-500 tracking-tighter">PHEI SYSTEM</h1>
+                <p class="text-[10px] text-gray-500 tracking-[0.4em] uppercase mt-2">Authorized Access Only</p>
+            </div>
+            <div class="space-y-4">
+                <input type="password" id="passInput" placeholder="ENTER ACCESS KEY" 
+                    class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-4 text-center text-white tracking-[0.5em] focus:border-blue-500 outline-none transition-all">
+                <button onclick="checkAuth()" 
+                    class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95">
+                    LOGIN & ACTIVATE
+                </button>
+            </div>
+            <p id="login-err" class="text-red-500 text-[10px] mt-4 font-bold opacity-0 transition-opacity">WRONG ACCESS KEY</p>
+        </div>
     </div>
 
     <div class="flex flex-col h-screen relative">
@@ -78,10 +89,7 @@
 
         <main class="flex-1 overflow-y-auto">
             <div class="p-4 border-b border-[var(--border)] bg-[var(--card)]/30 flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <h2 id="view-title" class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.3em]">🚀 REALTIME LEADS</h2>
-                </div>
-                
+                <h2 id="view-title" class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.3em]">🚀 REALTIME LEADS</h2>
                 <div class="flex items-center gap-3">
                     <div id="search-container" class="hidden">
                         <input type="text" id="clickSearch" class="search-input" placeholder="Cari ID / Negara..." onkeyup="filterClicks()">
@@ -92,7 +100,6 @@
                     </div>
                 </div>
             </div>
-
             <table id="data-table">
                 <thead id="table-head"></thead>
                 <tbody id="main-table-body"></tbody>
@@ -108,18 +115,29 @@ const synth = window.speechSynthesis;
 let leadsData = [];
 let clicksData = [];
 let currentView = 'live';
-let isSystemEnabled = false;
+let isAuth = false;
 
-const crownSvg = `<svg class="w-5 h-5 text-yellow-500 animate-bounce" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
-const userSvg = `<svg class="w-5 h-5 opacity-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
+// Mahkota Tanpa Animasi
+const crownSvg = `<svg class="w-5 h-5 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 
-function enableSystem() {
-    isSystemEnabled = true;
-    document.getElementById('voice-overlay').style.display = 'none';
-    if (Notification.permission !== 'granted') Notification.requestPermission();
-    const speak = new SpeechSynthesisUtterance("Sistem Monitoring Aktif");
-    speak.lang = 'id-ID';
-    synth.speak(speak);
+function checkAuth() {
+    const pass = document.getElementById('passInput').value;
+    if(pass === 'phei2026') {
+        isAuth = true;
+        document.getElementById('login-overlay').style.display = 'none';
+        if (Notification.permission !== 'granted') Notification.requestPermission();
+        
+        // Suara Selamat Datang AI
+        const welcome = new SpeechSynthesisUtterance("Selamat datang kembali, Master. Sistem monitoring telah diaktifkan.");
+        welcome.lang = 'id-ID';
+        welcome.pitch = 1.1;
+        welcome.rate = 0.9;
+        synth.speak(welcome);
+    } else {
+        const err = document.getElementById('login-err');
+        err.style.opacity = '1';
+        setTimeout(() => err.style.opacity = '0', 2000);
+    }
 }
 
 function getFlag(country) {
@@ -128,13 +146,90 @@ function getFlag(country) {
     return code === 'uk' ? 'gb' : code;
 }
 
-function sendSystemNotif(payout, clickId) {
-    if (Notification.permission === "granted") {
-        new Notification("🔥 LEAD MASUK!", {
-            body: `ID: ${clickId} | Payout: $${payout}`,
-            icon: "icon.png" 
-        });
+function updateDisplay() {
+    mainTable.innerHTML = "";
+    let kingId = "";
+    let topVal = 0;
+    let grandTotal = 0;
+
+    const perfMap = {};
+    leadsData.forEach(l => {
+        const p = parseFloat(l.payout);
+        grandTotal += p;
+        if(!perfMap[l.click_id]) perfMap[l.click_id] = {...l, total:0, count:0};
+        perfMap[l.click_id].total += p;
+        perfMap[l.click_id].count++;
+    });
+
+    totalEarningsEl.innerText = `$${grandTotal.toFixed(2)}`;
+
+    const sortedPerf = Object.values(perfMap).sort((a,b) => b.total - a.total);
+    if(sortedPerf.length > 0) {
+        kingId = sortedPerf[0].click_id;
+        topVal = sortedPerf[0].total;
     }
+
+    if (currentView === 'live') {
+        tableHead.innerHTML = `<tr><th width="20%">USER</th><th width="35%">CLICK ID</th><th width="15%">COUNTRY</th><th width="15%" class="text-center">INFO</th><th width="15%" class="text-right">PAYOUT</th></tr>`;
+        leadsData.forEach(d => {
+            const row = mainTable.insertRow();
+            row.innerHTML = `
+                <td class="p-4"><span class="font-bold text-blue-500 uppercase">${d.oid||'USR'}</span></td>
+                <td class="font-mono text-xs opacity-50 truncate">${d.click_id}</td>
+                <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow"><span class="text-[12px] font-bold uppercase">${d.country||'ID'}</span></div></td>
+                <td class="text-center text-[10px] opacity-50">${new Date(d.timestamp).toLocaleTimeString()}</td>
+                <td class="text-right font-bold text-green-500">$${parseFloat(d.payout).toFixed(2)}</td>
+            `;
+        });
+    } else if (currentView === 'perf') {
+        // TAMPILAN PERFORMANCE RINGKAS
+        tableHead.innerHTML = `<tr><th width="50%">CLICK ID</th><th width="25%" class="text-center">INFO</th><th width="25%" class="text-right">PAYOUT</th></tr>`;
+        sortedPerf.forEach(d => {
+            const isKing = d.click_id === kingId;
+            const row = mainTable.insertRow();
+            row.innerHTML = `
+                <td class="p-4">
+                    <div class="flex items-center gap-3">
+                        ${isKing ? crownSvg : '<div class="w-5"></div>'}
+                        <span class="font-mono text-xs ${isKing ? 'text-yellow-500 font-bold' : 'opacity-70'}">${d.click_id}</span>
+                    </div>
+                </td>
+                <td class="text-center text-[10px] font-bold">${d.count} LEADS</td>
+                <td class="text-right font-bold text-green-500">$${d.total.toFixed(2)}</td>
+            `;
+        });
+    } else {
+        tableHead.innerHTML = `<tr><th width="40%">CLICK ID</th><th width="20%">COUNTRY</th><th width="20%">STATUS</th><th width="20%" class="text-right">TIME</th></tr>`;
+        filterClicks();
+    }
+
+    const m = document.getElementById('marquee-text');
+    if(m && kingId) m.innerHTML = `🏆 TOP RECORD: <span class="text-yellow-500">${kingId}</span> // TOTAL PAYOUT: <span class="text-green-500">$${topVal.toFixed(2)}</span> // STATUS: SECURE`;
+}
+
+function handleData(data, type, isNew = false) {
+    if (type === 'LEAD') {
+        leadsData.unshift(data);
+        if (leadsData.length > 500) leadsData.pop();
+        updateDisplay(); 
+        if (isNew && isAuth) {
+            new Notification("🔥 LEAD MASUK!", { body: `ID: ${data.click_id} | $${data.payout}` });
+            synth.cancel();
+            const utter = new SpeechSynthesisUtterance(`Lead ${data.payout} dolar masuk.`);
+            utter.lang = 'id-ID';
+            synth.speak(utter);
+        }
+    } else {
+        clicksData.unshift(data);
+        if (clicksData.length > 200) clicksData.pop();
+        if(currentView === 'traffic') updateDisplay();
+    }
+}
+
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light-mode');
+    document.getElementById('sun-icon').classList.toggle('hidden', isLight);
+    document.getElementById('moon-icon').classList.toggle('hidden', !isLight);
 }
 
 function openMenuPopup() {
@@ -144,9 +239,9 @@ function openMenuPopup() {
     menu.id = 'nav-popup-menu';
     menu.className = "fixed top-16 right-4 w-56 border border-[var(--border)] rounded-xl z-[999] p-2 flex flex-col gap-1 shadow-2xl";
     menu.innerHTML = `
-        <button onclick="switchView('live')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-500/10 text-white w-full"><svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="font-bold text-[10px] uppercase">Realtime Leads</span></button>
-        <button onclick="switchView('perf')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-green-500/10 text-white w-full"><svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M18 20V10M12 20V4M6 20v-6"/></svg><span class="font-bold text-[10px] uppercase">Performance</span></button>
-        <button onclick="switchView('traffic')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-purple-500/10 text-white w-full"><svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span class="font-bold text-[10px] uppercase">Live Traffic</span></button>
+        <button onclick="switchView('live')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-500/10 w-full text-left"><span class="font-bold text-[10px] uppercase">Realtime Leads</span></button>
+        <button onclick="switchView('perf')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-green-500/10 w-full text-left"><span class="font-bold text-[10px] uppercase">Performance</span></button>
+        <button onclick="switchView('traffic')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-purple-500/10 w-full text-left"><span class="font-bold text-[10px] uppercase">Live Traffic</span></button>
     `;
     document.body.appendChild(menu);
     setTimeout(() => document.addEventListener('click', (e) => { if(!menu.contains(e.target)) menu.remove(); }, {once:true, capture:true}), 10);
@@ -162,121 +257,18 @@ function switchView(view) {
     updateDisplay();
 }
 
-function updateDisplay() {
-    mainTable.innerHTML = "";
-    let kingId = "";
-    let topVal = 0;
-    let grandTotal = 0;
-
-    const perfMap = {};
-    leadsData.forEach(l => {
-        const p = parseFloat(l.payout);
-        grandTotal += p; // Hitung total penghasilan keseluruhan
-        if(!perfMap[l.click_id]) perfMap[l.click_id] = {...l, total:0, count:0};
-        perfMap[l.click_id].total += p;
-        perfMap[l.click_id].count++;
-    });
-
-    // Update Angka di Pojok Kanan
-    totalEarningsEl.innerText = `$${grandTotal.toFixed(2)}`;
-
-    const sortedPerf = Object.values(perfMap).sort((a,b) => b.total - a.total);
-    if(sortedPerf.length > 0) {
-        kingId = sortedPerf[0].click_id;
-        topVal = sortedPerf[0].total;
-    }
-
-    if (currentView === 'live' || currentView === 'perf') {
-        tableHead.innerHTML = `<tr><th width="20%">USER</th><th width="35%">CLICK ID</th><th width="15%">COUNTRY</th><th width="15%" class="text-center">INFO</th><th width="15%" class="text-right">PAYOUT</th></tr>`;
-        let renderData = (currentView === 'live') ? leadsData : sortedPerf;
-
-        renderData.forEach(d => {
-            const isKing = d.click_id === kingId && kingId !== "";
-            const pValue = currentView === 'perf' ? d.total : parseFloat(d.payout);
-            const row = mainTable.insertRow();
-            let iconHtml = (currentView === 'perf') ? (isKing ? crownSvg : userSvg) : "";
-
-            row.innerHTML = `
-                <td class="p-4"><div class="flex items-center gap-2">${iconHtml}<span class="font-bold ${isKing && currentView === 'perf' ? 'text-yellow-500' : 'text-blue-500'} uppercase">${d.oid||'USR'}</span></div></td>
-                <td class="font-mono text-xs opacity-50 truncate">${d.click_id}</td>
-                <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow"><span class="text-[10px] font-bold uppercase">${d.country||'ID'}</span></div></td>
-                <td class="text-center text-[10px] opacity-50">${currentView==='perf' ? d.count+' LEADS' : new Date(d.timestamp).toLocaleTimeString()}</td>
-                <td class="text-right font-bold text-green-500">$${pValue.toFixed(2)}</td>
-            `;
-        });
-        
-        const m = document.getElementById('marquee-text');
-        if(m && kingId) m.innerHTML = `🏆 TOP RECORD: <span class="text-yellow-500">${kingId}</span> // TOTAL PAYOUT: <span class="text-green-500">$${topVal.toFixed(2)}</span> // STATUS: SECURE & CONNECTED`;
-    } else {
-        tableHead.innerHTML = `<tr><th width="40%">CLICK ID</th><th width="20%">COUNTRY</th><th width="20%">STATUS</th><th width="20%" class="text-right">TIME</th></tr>`;
-        filterClicks();
-    }
-}
-
-function filterClicks() {
-    if(currentView !== 'traffic') return;
-    const s = document.getElementById('clickSearch').value.toLowerCase();
-    mainTable.innerHTML = "";
-    clicksData.forEach(c => {
-        if(c.click_id.toLowerCase().includes(s) || (c.country||'').toLowerCase().includes(s)) {
-            const row = mainTable.insertRow();
-            row.innerHTML = `<td class="p-4 font-mono text-xs text-blue-400">${c.click_id}</td><td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(c.country)}.svg" class="w-5"><span class="text-[10px] font-bold uppercase">${c.country||'ID'}</span></div></td><td><span class="text-[9px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded">CLICKED</span></td><td class="text-right text-[10px] opacity-40">${new Date().toLocaleTimeString()}</td>`;
-        }
-    });
-}
-
-function handleData(data, type, isNew = false) {
-    if (type === 'LEAD') {
-        leadsData.unshift(data);
-        if (leadsData.length > 500) leadsData.pop();
-        updateDisplay(); 
-        if (isNew && isSystemEnabled) {
-            sendSystemNotif(data.payout, data.click_id);
-            synth.cancel();
-            const utter = new SpeechSynthesisUtterance(`Lead ${data.payout} dolar masuk.`);
-            utter.lang = 'id-ID';
-            synth.speak(utter);
-            const botToken = "8294616704:AAF7M8RQkNKdkJeNvVdeGFG7zrU26vo7sao";
-            const chatId = "-1002258281914";
-            fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🔥 *LEAD MASUK!* 🔥\n\n🆔 ID: `' + data.click_id + '` \n💰 Payout: $' + data.payout)}&parse_mode=Markdown`).catch(e => {});
-        }
-    } else {
-        clicksData.unshift(data);
-        if (clicksData.length > 200) clicksData.pop();
-        if(currentView === 'traffic') updateDisplay();
-    }
-}
-
-function toggleTheme() {
-    const isLight = document.body.classList.toggle('light-mode');
-    document.getElementById('sun-icon').classList.toggle('hidden', isLight);
-    document.getElementById('moon-icon').classList.toggle('hidden', !isLight);
-}
-
-setInterval(() => {
-    const now = new Date();
-    if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
-        leadsData = []; clicksData = []; updateDisplay();
-    }
-}, 1000);
-
-async function autoSync() {
-    try {
-        const [resL, resC] = await Promise.all([fetch('/get-history?t=' + Date.now()), fetch('/get-clicks?t=' + Date.now())]);
-        const l = await resL.json(); const c = await resC.json();
-        if (Array.isArray(l)) leadsData = l;
-        if (Array.isArray(c)) clicksData = c;
-        updateDisplay();
-    } catch (e) {}
-}
-
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
 channel.bind('new-lead', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'LEAD', true));
 channel.bind('new-click', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'CLICK', false));
 
-autoSync();
-setInterval(autoSync, 10000);
+// Reset Jam 7 Pagi
+setInterval(() => {
+    const now = new Date();
+    if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
+        leadsData = []; updateDisplay();
+    }
+}, 1000);
 </script>
 </body>
 </html>
