@@ -1,48 +1,59 @@
 export async function onRequestGet(context) {
+  try {
     const { searchParams } = new URL(context.request.url);
     
-    // Ambil data dari URL
-    const click_id = searchParams.get('click_id') || 'ID-' + Math.floor(Math.random()*9999);
+    // Ambil data dari parameter URL atau gunakan default jika kosong
+    const click_id = searchParams.get('click_id') || 'GUEST-' + Math.floor(Math.random()*999);
     const country = searchParams.get('country') || 'ID';
 
-    // Data untuk dikirim ke Pusher
-    const clickData = {
-        click_id: click_id,
-        country: country,
-        type: 'CLICK'
-    };
-
-    // Konfigurasi Pusher (Sama dengan postback.js)
+    // Konfigurasi Pusher
     const appId = "2102557";
     const key = "6bc0867b80098f3e3424";
-    const secret = "46400c53058ed136c313"; // Pastikan secret ini benar
+    const secret = "46400c53058ed136c313";
     const timestamp = Math.floor(Date.now() / 1000);
-    
+
     const body = JSON.stringify({
-        name: "new-click",
-        channel: "my-channel",
-        data: JSON.stringify(clickData)
+      name: "new-click",
+      channel: "my-channel",
+      data: JSON.stringify({ click_id, country })
     });
 
-    // Generate Signature Pusher (Wajib agar tidak ditolak Pusher)
-    const { Buffer } = await import('node:buffer');
-    const crypto = await import('node:crypto');
-    const method = "POST";
+    // Menggunakan node:crypto yang lebih stabil untuk Cloudflare
+    const crypto = require('node:crypto');
     const path = `/apps/${appId}/events`;
-    const query = `auth_key=${key}&auth_timestamp=${timestamp}&auth_version=1.0`;
+    
+    // 1. Hitung MD5 dari body
     const bodyMd5 = crypto.createHash('md5').update(body).digest('hex');
-    const signData = [method, path, query + `&body_md5=${bodyMd5}`].join('\n');
-    const signature = crypto.createHmac('sha256', secret).update(signData).digest('hex');
+    
+    // 2. Susun Query String
+    const query = `auth_key=${key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
+    
+    // 3. Buat Signature HMAC SHA256
+    const stringToSign = `POST\n${path}\n${query}`;
+    const signature = crypto.createHmac('sha256', secret).update(stringToSign).digest('hex');
 
-    // Kirim ke Pusher
-    await fetch(`https://api-ap1.pusher.com${path}?${query}&body_md5=${bodyMd5}&auth_signature=${signature}`, {
-        method: 'POST',
-        body: body,
-        headers: { 'Content-Type': 'application/json' }
+    // 4. Kirim Request ke API Pusher
+    const response = await fetch(`https://api-ap1.pusher.com${path}?${query}&auth_signature=${signature}`, {
+      method: 'POST',
+      body: body,
+      headers: { 'Content-Type': 'application/json' }
     });
 
-    return new Response("CLICK_LOGGED", { 
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Pusher error: ${response.status} - ${errorText}`);
+    }
+
+    return new Response("OK", { 
         status: 200,
-        headers: { "Access-Control-Allow-Origin": "*" } 
+        headers: { 
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "text/plain"
+        } 
     });
+    
+  } catch (err) {
+    // Jika terjadi error, tampilkan detailnya agar mudah diperbaiki
+    return new Response(`Error: ${err.message}`, { status: 500 });
+  }
 }
