@@ -93,18 +93,16 @@ const stream = document.getElementById('activity-stream');
 const synth = window.speechSynthesis;
 
 let leadsData = [];
-let processedClickIds = new Set(); 
+// Untuk Click, kita biarkan bisa masuk berulang kali dengan menghapus pengecekan ID unik
+// tapi kita batasi jumlah tampilan di sidebar agar tidak lag
 
 // 1. Izin & Notifikasi
 function initPermissions() {
     if (Notification.permission !== "granted") Notification.requestPermission();
 }
 
-// Fungsi Suara Google (Membaca Click ID)
 function announceLead(clickId, payout) {
-    synth.cancel(); // Potong suara lama biar gak antre
-    
-    // Eja ID agar jelas: A B 1 2 dst.
+    synth.cancel(); 
     const spelledId = clickId.substring(0, 6).split('').join(' ');
     const utter = new SpeechSynthesisUtterance(`Lead baru. Klik I D. ${spelledId}. Payout ${payout} dolar.`);
     utter.lang = 'id-ID';
@@ -119,11 +117,11 @@ function announceLead(clickId, payout) {
     }
 }
 
-// 2. SVG Icons Dinamis (Warna Putih di Gelap, Hitam di Terang)
+// 2. SVG Icons Dinamis (Ikut Tema)
 const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 const userSvg = `<svg class="w-6 h-6" style="color: var(--text); opacity: 0.7;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
-// 3. Update Tabel Utama
+// 3. Update Tabel Utama (Report)
 function updateTable() {
     const maxPayout = leadsData.length > 0 ? Math.max(...leadsData.map(l => parseFloat(l.payout))) : 0;
     mainTable.innerHTML = "";
@@ -134,44 +132,52 @@ function updateTable() {
         row.innerHTML = `
             <td class="p-3"><div class="flex items-center gap-3">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid || 'USER'}</span></div></td>
             <td class="text-gray-400 font-mono text-xs">${data.click_id}</td>
-            <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-5 shadow-sm"><span class="text-[10px] font-bold opacity-70">${countryCode}</span></div></td>
+            <td>
+                <div class="flex items-center gap-2">
+                    <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6 shadow-sm">
+                    <span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span>
+                </div>
+            </td>
             <td class="text-gray-500 text-[10px] text-center">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
             <td class="font-bold text-green-500 text-right text-lg">$${parseFloat(data.payout).toFixed(2)}</td>
         `;
     });
 }
 
-// 4. Logika Handle Data (SATSET)
+// 4. Logika Handle Data
 function handleData(data, type, isNew = false) {
+    const countryCode = (data.country || 'ID').toUpperCase();
+    
     if (type === 'LEAD') {
-        // FILTER DUPLIKAT DIHAPUS agar bisa tes berulang-ulang dengan data yang sama
         leadsData.unshift(data);
         if (leadsData.length > 50) leadsData.pop();
         updateTable();
         if (isNew) announceLead(data.click_id, data.payout);
     } else if (type === 'CLICK') {
-        // Click tetap pakai filter ID agar sidebar tidak berantakan
-        if (!processedClickIds.has(data.click_id)) {
-            processedClickIds.add(data.click_id);
-            const countryCode = (data.country || 'ID').toUpperCase();
-            const item = document.createElement('div');
-            item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] flex justify-between items-center type-CLICK mb-2 row-animate";
-            item.innerHTML = `
-                <div>
-                    <span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span>
-                    <div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div>
-                </div>
-                <div class="flex flex-col items-end gap-1">
-                    <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-5 shadow">
-                    <span class="text-[9px] font-bold opacity-50">${countryCode}</span>
-                </div>`;
-            stream.prepend(item);
-            if (stream.children.length > 5) stream.lastChild.remove();
+        // Hapus filter "processedClickIds" agar bisa tes 2x meskipun ID-nya sama
+        const item = document.createElement('div');
+        item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] flex justify-between items-center type-CLICK mb-2 row-animate";
+        item.innerHTML = `
+            <div>
+                <span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span>
+                <div class="text-sm text-gray-400 font-mono truncate w-40">${data.click_id}</div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span>
+                <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6 shadow">
+            </div>`;
+        
+        stream.prepend(item);
+        
+        // Batasi hanya 5 kotak di sidebar biar ga penuh
+        const boxes = stream.querySelectorAll('.type-CLICK');
+        if (boxes.length > 5) {
+            stream.removeChild(boxes[boxes.length - 1]);
         }
     }
 }
 
-// 5. AUTO SYNC (Backup tiap 2 detik)
+// 5. Auto Sync
 async function autoSync() {
     try {
         const [resL, resC] = await Promise.all([
@@ -180,21 +186,26 @@ async function autoSync() {
         ]);
         const leads = await resL.json();
         const clicks = await resC.json();
-        // Saat sync, jangan bunyikan suara (isNew = false) agar tidak berisik saat loading awal
         if (Array.isArray(leads)) {
             leadsData = leads.slice(0, 50);
             updateTable();
         }
-        if (Array.isArray(clicks)) clicks.reverse().forEach(c => handleData(c, 'CLICK', false));
+        // Sync click history tanpa memicu suara/notif
+        if (Array.isArray(clicks)) {
+            // Bersihkan dulu biar tidak double saat sinkronisasi rutin
+            const currentBoxes = stream.querySelectorAll('.type-CLICK');
+            if (currentBoxes.length < 5) {
+                clicks.reverse().forEach(c => handleData(c, 'CLICK', false));
+            }
+        }
     } catch (e) {}
 }
 
-// Inisialisasi
+// Start
 initPermissions();
 autoSync();
-setInterval(autoSync, 2000); // Sinkronisasi database tiap 2 detik
+setInterval(autoSync, 2000);
 
-// Pusher (Realtime - Satset)
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
 channel.bind('new-lead', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'LEAD', true));
@@ -208,7 +219,6 @@ function toggleTheme() {
     document.getElementById('moon-icon').classList.toggle('hidden', !isL);
 }
 
-// Pancing izin Browser
 document.addEventListener('click', () => { 
     synth.speak(new SpeechSynthesisUtterance("")); 
     initPermissions(); 
