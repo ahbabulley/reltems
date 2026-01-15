@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R.O.W.X PHEI 2026</title>
+    <title>PHEI REALTIME</title>
+	<link rel="shortcut icon" href="icon.png" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -93,16 +94,10 @@ const stream = document.getElementById('activity-stream');
 const synth = window.speechSynthesis;
 
 let leadsData = [];
-// Untuk Click, kita biarkan bisa masuk berulang kali dengan menghapus pengecekan ID unik
-// tapi kita batasi jumlah tampilan di sidebar agar tidak lag
 
-// 1. Izin & Notifikasi
-function initPermissions() {
-    if (Notification.permission !== "granted") Notification.requestPermission();
-}
-
-function announceLead(clickId, payout, country) {
-    // 1. Suara Google
+// 1. Fungsi Utama: Suara, Notifikasi, & TELEGRAM
+async function announceLead(clickId, payout, country) {
+    // A. SUARA GOOGLE
     synth.cancel(); 
     const spelledId = clickId.substring(0, 6).split('').join(' ');
     const utter = new SpeechSynthesisUtterance(`Lead baru. Klik I D. ${spelledId}. Payout ${payout} dolar.`);
@@ -110,7 +105,7 @@ function announceLead(clickId, payout, country) {
     utter.rate = 1.0; 
     synth.speak(utter);
 
-    // 2. Notifikasi Sistem Browser
+    // B. NOTIFIKASI SISTEM (Pop-up Browser)
     if (Notification.permission === "granted") {
         new Notification("LEAD BARU: " + clickId, {
             body: `ID: ${clickId}\nPayout: $${payout}`,
@@ -118,21 +113,26 @@ function announceLead(clickId, payout, country) {
         });
     }
 
-    // 3. OTOMATIS KIRIM TELEGRAM
+    // C. KIRIM KE TELEGRAM (Otomatis)
     const botToken = "8294616704:AAF7M8RQkNKdkJeNvVdeGFG7zrU26vo7sao";
     const chatId = "-1002258281914";
-    const pesan = `🔥 LEAD MASUK! 🔥\n\nID: ${clickId}\nPayout: $${payout}\nNegara: ${country || 'ID'}\nStatus: Berhasil`;
+    const pesan = `🔥 *LEAD MASUK!* 🔥\n\n🆔 *ID:* \`${clickId}\` \n💰 *Payout:* $${payout}\n🌍 *Negara:* ${country || 'ID'}\n✅ *Status:* Berhasil`;
     
-    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendmessage?chat_id=${chatId}&text=${encodeURIComponent(pesan)}`;
+    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(pesan)}&parse_mode=Markdown`;
     
-    fetch(telegramUrl).catch(err => console.error("Gagal kirim Telegram", err));
+    try {
+        await fetch(telegramUrl);
+        console.log("Telegram Sent!");
+    } catch (err) {
+        console.error("Telegram Error:", err);
+    }
 }
 
-// 2. SVG Icons Dinamis (Ikut Tema)
+// 2. SVG Icons (Warna Dinamis)
 const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 const userSvg = `<svg class="w-6 h-6" style="color: var(--text); opacity: 0.7;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
-// 3. Update Tabel Utama (Report)
+// 3. Update Tabel Utama
 function updateTable() {
     const maxPayout = leadsData.length > 0 ? Math.max(...leadsData.map(l => parseFloat(l.payout))) : 0;
     mainTable.innerHTML = "";
@@ -143,77 +143,48 @@ function updateTable() {
         row.innerHTML = `
             <td class="p-3"><div class="flex items-center gap-3">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid || 'USER'}</span></div></td>
             <td class="text-gray-400 font-mono text-xs">${data.click_id}</td>
-            <td>
-                <div class="flex items-center gap-2">
-                    <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6 shadow-sm">
-                    <span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span>
-                </div>
-            </td>
+            <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6 shadow-sm"><span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span></div></td>
             <td class="text-gray-500 text-[10px] text-center">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
             <td class="font-bold text-green-500 text-right text-lg">$${parseFloat(data.payout).toFixed(2)}</td>
         `;
     });
 }
 
-// 4. Logika Handle Data
+// 4. Handle Data
 function handleData(data, type, isNew = false) {
-    const countryCode = (data.country || 'ID').toUpperCase();
-    
     if (type === 'LEAD') {
         leadsData.unshift(data);
         if (leadsData.length > 50) leadsData.pop();
         updateTable();
-        if (isNew) announceLead(data.click_id, data.payout);
+        if (isNew) {
+            announceLead(data.click_id, data.payout, data.country);
+        }
     } else if (type === 'CLICK') {
-        // Hapus filter "processedClickIds" agar bisa tes 2x meskipun ID-nya sama
+        const countryCode = (data.country || 'ID').toUpperCase();
         const item = document.createElement('div');
         item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] flex justify-between items-center type-CLICK mb-2 row-animate";
-        item.innerHTML = `
-            <div>
-                <span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span>
-                <div class="text-sm text-gray-400 font-mono truncate w-40">${data.click_id}</div>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span>
-                <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6 shadow">
-            </div>`;
-        
+        item.innerHTML = `<div><span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span><div class="text-sm text-gray-400 font-mono truncate w-40">${data.click_id}</div></div>
+            <div class="flex items-center gap-2"><span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span><img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6"></div>`;
         stream.prepend(item);
-        
-        // Batasi hanya 5 kotak di sidebar biar ga penuh
-        const boxes = stream.querySelectorAll('.type-CLICK');
-        if (boxes.length > 5) {
-            stream.removeChild(boxes[boxes.length - 1]);
-        }
+        if (stream.children.length > 5) stream.lastChild.remove();
     }
 }
 
-// 5. Auto Sync
+// 5. Sync & Pusher
 async function autoSync() {
     try {
-        const [resL, resC] = await Promise.all([
-            fetch('/get-history?t=' + Date.now()),
-            fetch('/get-clicks?t=' + Date.now())
-        ]);
+        const [resL, resC] = await Promise.all([fetch('/get-history?t=' + Date.now()), fetch('/get-clicks?t=' + Date.now())]);
         const leads = await resL.json();
         const clicks = await resC.json();
-        if (Array.isArray(leads)) {
-            leadsData = leads.slice(0, 50);
-            updateTable();
-        }
-        // Sync click history tanpa memicu suara/notif
-        if (Array.isArray(clicks)) {
-            // Bersihkan dulu biar tidak double saat sinkronisasi rutin
+        if (Array.isArray(leads)) { leadsData = leads.slice(0, 50); updateTable(); }
+        if (Array.isArray(clicks)) { 
             const currentBoxes = stream.querySelectorAll('.type-CLICK');
-            if (currentBoxes.length < 5) {
-                clicks.reverse().forEach(c => handleData(c, 'CLICK', false));
-            }
+            if (currentBoxes.length < 5) clicks.reverse().forEach(c => handleData(c, 'CLICK', false));
         }
     } catch (e) {}
 }
 
-// Start
-initPermissions();
+if (Notification.permission !== "granted") Notification.requestPermission();
 autoSync();
 setInterval(autoSync, 2000);
 
@@ -229,11 +200,7 @@ function toggleTheme() {
     document.getElementById('sun-icon').classList.toggle('hidden', isL);
     document.getElementById('moon-icon').classList.toggle('hidden', !isL);
 }
-
-document.addEventListener('click', () => { 
-    synth.speak(new SpeechSynthesisUtterance("")); 
-    initPermissions(); 
-}, {once: true});
+document.addEventListener('click', () => { synth.speak(new SpeechSynthesisUtterance("")); }, {once: true});
 </script>
 </body>
 </html>
