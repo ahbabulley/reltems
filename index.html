@@ -95,29 +95,43 @@ const synth = window.speechSynthesis;
 let leadsData = [];
 let processedClickIds = new Set(); 
 
-// Izin Notifikasi
-if (Notification.permission !== "granted") Notification.requestPermission();
+// Izin Notifikasi Otomatis
+function requestNotif() {
+    if (Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+}
+requestNotif();
 
 // SVG Icons
 const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 const userSvg = `<svg class="w-6 h-6 text-gray-500/30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
+// Fungsi Suara & Notif (Dibuat lebih responsif)
 function speakAndNotify(title, msg) {
-    // Suara Google
+    // Stop suara lama agar tidak antri (Langsung bicara yang baru)
+    synth.cancel(); 
+    
     const utter = new SpeechSynthesisUtterance(msg);
     utter.lang = 'id-ID';
-    utter.rate = 0.9;
+    utter.rate = 1.0;
+    utter.pitch = 1.0;
     synth.speak(utter);
 
-    // Notifikasi Windows
     if (Notification.permission === "granted") {
-        new Notification(title, { body: msg });
+        const n = new Notification(title, { 
+            body: msg,
+            icon: 'https://cdn-icons-png.flaticon.com/512/1162/1162250.png'
+        });
+        // Notif tutup otomatis setelah 4 detik
+        setTimeout(n.close.bind(n), 4000);
     }
 }
 
 function updateTable() {
     if (!leadsData.length) return;
-    const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)), 0);
+    // Cari payout tertinggi
+    const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)));
     mainTable.innerHTML = "";
     
     leadsData.forEach((data) => {
@@ -130,9 +144,9 @@ function updateTable() {
                     <span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid || 'USER'}</span>
                 </div>
             </td>
-            <td class="text-gray-400 font-mono text-xs">${data.click_id}</td>
+            <td class="text-gray-400 font-mono text-[10px]">${data.click_id}</td>
             <td><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-6 shadow-sm"></td>
-            <td class="text-gray-500 text-xs text-center">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
+            <td class="text-gray-500 text-[10px] text-center">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
             <td class="font-bold text-green-500 text-right text-lg">$${parseFloat(data.payout).toFixed(2)}</td>
         `;
     });
@@ -140,12 +154,16 @@ function updateTable() {
 
 function handleData(data, type, isNew = false) {
     if (type === 'LEAD') {
-        if (!leadsData.some(l => l.click_id === data.click_id)) {
+        // Biar bisa masuk berkali-kali saat tes, cek berdasarkan ID & waktu
+        const isExist = leadsData.some(l => l.click_id === data.click_id && Math.abs(l.timestamp - data.timestamp) < 2000);
+        
+        if (!isExist) {
             leadsData.unshift(data);
             if (leadsData.length > 50) leadsData.pop();
             updateTable();
+            
             if (isNew) {
-                speakAndNotify("LEAD BARU", `Cuan masuk dari ID ${data.click_id.substring(0,5)}`);
+                speakAndNotify("LEAD BARU!", `Cuan masuk ${data.payout} dolar dari ID ${data.click_id.substring(0,4)}`);
             }
         }
     } else if (type === 'CLICK') {
@@ -174,7 +192,10 @@ function handleData(data, type, isNew = false) {
 // Sinkronisasi data ke Server
 async function syncData() {
     try {
-        const [resL, resC] = await Promise.all([fetch('/get-history'), fetch('/get-clicks')]);
+        const [resL, resC] = await Promise.all([
+            fetch('/get-history?t=' + Date.now()), // Tambah random query biar ga cache
+            fetch('/get-clicks?t=' + Date.now())
+        ]);
         const leads = await resL.json();
         const clicks = await resC.json();
         if (Array.isArray(leads)) [...leads].reverse().forEach(l => handleData(l, 'LEAD', false));
@@ -182,16 +203,17 @@ async function syncData() {
     } catch (e) {}
 }
 
-// Eksekusi
+// Eksekusi Start
 syncData(); 
-setInterval(syncData, 5000); // Sinkronisasi tiap 5 detik (Backup)
+setInterval(syncData, 10000); // Sinkronisasi cadangan tiap 10 detik
 
-// Pusher (Realtime Instan Tanpa Delay)
+// PUSHER REALTIME (UTAMA)
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
 
 channel.bind('new-lead', d => {
     const data = typeof d === 'string' ? JSON.parse(d) : d;
+    console.log("Lead Masuk:", data);
     handleData(data, 'LEAD', true);
 });
 
@@ -201,6 +223,9 @@ channel.bind('new-click', d => {
 });
 
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+// Tambahkan pancingan klik global
+document.body.addEventListener('click', requestNotif, {once: true});
 </script>
 </body>
 </html>
