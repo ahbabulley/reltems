@@ -1,75 +1,184 @@
-// File: functions/postback.js
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R.O.W.X PHEI 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --sub-text: #8b949e; }
+        .light-mode { --bg: #ffffff; --card: #f6f8fa; --text: #24292f; --border: #d0d7de; --sub-text: #57606a; }
+        
+        body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); overflow: hidden; transition: 0.3s; }
+        .font-rowx { font-family: 'Orbitron', sans-serif; }
+        
+        nav { display: flex; align-items: center; padding: 0 24px; height: 70px; background: var(--card); border-bottom: 1px solid var(--border); }
+        .logo-area { display: flex; flex-direction: column; line-height: 1.1; shrink-0; }
+        .phei-text { font-family: 'Orbitron', sans-serif; font-size: 7px; letter-spacing: 0.1em; color: rgba(139, 148, 158, 0.4); font-weight: 700; margin-top: 2px; }
 
-export async function onRequestGet(context) {
-  try {
-    const { searchParams } = new URL(context.request.url);
-    
-    // Ambil data yang dikirim oleh Network Iklan
-    const click_id = searchParams.get('click_id');
-    const oid = searchParams.get('oid') || 'UNKNOWN';
-    const payout = searchParams.get('payout') || '0.00';
-    const country = searchParams.get('country') || 'ID';
+        .marquee-container { 
+            flex: 1; height: 100%; overflow: hidden; margin: 0 20px; 
+            border-left: 1px solid var(--border); border-right: 1px solid var(--border); 
+            display: flex; align-items: center; white-space: nowrap;
+        }
+        .marquee-text { display: inline-block; animation: marquee 25s linear infinite; font-size: 11px; font-weight: 700; color: var(--sub-text); }
+        @keyframes marquee { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
 
-    if (!click_id) {
-      return new Response("Missing click_id", { status: 400 });
-    }
+        /* Tabel - Font & Warna Diselaraskan */
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th { background: var(--card); color: var(--sub-text); font-size: 11px; padding: 12px 24px; border-bottom: 2px solid var(--border); text-align: left; }
+        td { padding: 12px 24px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; }
+        .click-id-cell { color: var(--sub-text); } /* Warna klik ID yang lebih jelas tapi tetap beda kategori */
 
-    // 1. Simpan ke Cloudflare KV (Database History)
-    // Pastikan kamu sudah bind KV namespace dengan nama 'DB'
-    const timestamp = Date.now();
-    const leadData = { click_id, oid, payout, country, timestamp };
-    
-    if (context.env.DB) {
-      await context.env.DB.put(`lead:${timestamp}`, JSON.stringify(leadData));
-    }
+        /* Fix Tombol Tema - Centered & Fixed */
+        .theme-box { 
+            background: var(--bg); border: 1px solid var(--border); 
+            width: 40px; height: 40px; border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+        .theme-box svg { width: 18px; height: 18px; flex-shrink: 0; }
 
-    // 2. Konfigurasi Pusher (Kirim ke Dashboard)
-    const appId = "2102557";
-    const key = "6bc0867b80098f3e3424";
-    const secret = "46400c53058ed136c313";
-    const authTimestamp = Math.floor(Date.now() / 1000);
+        #sidebar { 
+            position: absolute; right: 24px; top: -85vh; 
+            width: 340px; height: 75vh; 
+            background: var(--card); border: 1px solid var(--border); 
+            z-index: 100; border-radius: 0 0 12px 12px;
+            transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); display: flex; flex-direction: column;
+        }
+        #sidebar.open { top: 70px; }
+        
+        /* Status Lights Pulsing */
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        .dot-green { background: #22c55e; }
+        .dot-yellow { background: #eab308; animation-delay: 0.5s; }
+        .dot-red { background: #ef4444; animation-delay: 1s; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-    const body = JSON.stringify({
-      name: "new-lead",
-      channel: "my-channel",
-      data: JSON.stringify(leadData)
-    });
+        .row-animate { animation: highlight 1.2s ease-out; }
+        @keyframes highlight { from { background: rgba(59, 130, 246, 0.2); } to { background: transparent; } }
+    </style>
+</head>
+<body class="dark-mode">
 
-    // --- Logika Signature (Sama dengan click.js agar kompatibel) ---
-    const msgUint8 = new TextEncoder().encode(body);
-    const hashBuffer = await crypto.subtle.digest('MD5', msgUint8);
-    const bodyMd5 = Array.from(new Uint8Array(hashBuffer))
-      .map(b => b.toString(16).padStart(2, '0')).join('');
+    <audio id="leadSound" src="https://kokoya.pages.dev/kaya.mp3" preload="auto"></audio>
 
-    const path = `/apps/${appId}/events`;
-    const query = `auth_key=${key}&auth_timestamp=${authTimestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
-    const stringToSign = `POST\n${path}\n${query}`;
+    <div class="flex flex-col h-screen relative">
+        <nav>
+            <div class="logo-area">
+                <span class="text-xl font-bold font-rowx text-blue-500">R.O.W.X</span>
+                <span class="phei-text">PHEI EDITION 2026</span>
+            </div>
+            
+            <div class="marquee-container">
+                <div class="marquee-text uppercase">
+                    SYSTEM: OPERATIONAL // EDITION: PHEI 2026 // NODE: ASIA-1 // ENCRYPTION: ACTIVE // STATUS: SECURE // MONITORING...
+                </div>
+            </div>
 
-    const encoder = new TextEncoder();
-    const importKey = await crypto.subtle.importKey(
-      "raw", encoder.encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
-      false, ["sign"]
-    );
-    const signatureBuffer = await crypto.subtle.sign("HMAC", importKey, encoder.encode(stringToSign));
-    const signature = Array.from(new Uint8Array(signatureBuffer))
-      .map(b => b.toString(16).padStart(2, '0')).join('');
+            <div class="flex items-center gap-4">
+                <div class="theme-box">
+                    <button onclick="toggleTheme()" class="w-full h-full flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors">
+                        <svg id="sun-icon" class="block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2"></path></svg>
+                        <svg id="moon-icon" class="hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-width="2"></path></svg>
+                    </button>
+                </div>
+                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white transition-all">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </nav>
 
-    // 3. Eksekusi Kirim ke Pusher
-    const pusherRes = await fetch(`https://api-ap1.pusher.com${path}?${query}&auth_signature=${signature}`, {
-      method: 'POST',
-      body: body,
-      headers: { 'Content-Type': 'application/json' }
-    });
+        <main class="flex-1 overflow-y-auto">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">TEAM / OID</th>
+                        <th style="width: 35%;">CLICK ID</th>
+                        <th style="width: 15%;">LOC</th>
+                        <th style="width: 15%; text-align: center;">TIME</th>
+                        <th style="width: 15%; text-align: right;">PAYOUT</th>
+                    </tr>
+                </thead>
+                <tbody id="main-table-body"></tbody>
+            </table>
+        </main>
 
-    if (!pusherRes.ok) throw new Error("Pusher Broadcast Failed");
+        <aside id="sidebar">
+            <div class="p-4 border-b border-[var(--border)] flex justify-between items-center bg-[var(--card)]">
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-blue-500">Live Traffic</span>
+                    <div class="flex gap-1.5">
+                        <span class="status-dot dot-red"></span>
+                        <span class="status-dot dot-yellow"></span>
+                        <span class="status-dot dot-green"></span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="text-gray-500 text-xl">&times;</button>
+            </div>
+            <div id="activity-stream" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
+        </aside>
+    </div>
 
-    return new Response("Postback Success", { 
-      status: 200,
-      headers: { "Access-Control-Allow-Origin": "*" } 
-    });
+    <script>
+        const mainTable = document.getElementById('main-table-body');
+        const stream = document.getElementById('activity-stream');
+        const leadSound = document.getElementById('leadSound');
+        let leadsData = [];
 
-  } catch (err) {
-    return new Response(`Error: ${err.message}`, { status: 500 });
-  }
-}
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function toggleTheme() {
+            const isL = document.body.classList.toggle('light-mode');
+            document.getElementById('sun-icon').classList.toggle('hidden', isL);
+            document.getElementById('moon-icon').classList.toggle('hidden', !isL);
+        }
+
+        const crownSvg = `<svg class="w-5 h-5 text-yellow-500 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
+        const userSvg = `<svg class="w-5 h-5 text-gray-500/50 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/></svg>`;
+
+        function updateTable(newClickId = null) {
+            const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)), 0);
+            mainTable.innerHTML = "";
+            leadsData.forEach((data) => {
+                const isKing = parseFloat(data.payout) === maxPayout && maxPayout > 0;
+                const row = mainTable.insertRow();
+                if (newClickId === data.click_id) row.classList.add('row-animate');
+                
+                row.innerHTML = `
+                    <td><div class="flex items-center gap-3">${isKing ? crownSvg : userSvg} <span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid}</span></div></td>
+                    <td class="click-id-cell truncate">${data.click_id}</td>
+                    <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 rounded-sm"><span class="font-bold text-gray-400 uppercase">${data.country || 'ID'}</span></div></td>
+                    <td style="text-align: center;" class="text-gray-500 text-xs font-bold">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
+                    <td style="text-align: right;" class="font-bold text-green-500 text-base">$${parseFloat(data.payout).toFixed(2)}</td>
+                `;
+            });
+        }
+
+        function addData(data, type) {
+            if (type === 'LEAD') {
+                leadSound.play().catch(() => {});
+                leadsData.unshift(data);
+                if (leadsData.length > 50) leadsData.pop();
+                updateTable(data.click_id);
+            }
+            const item = document.createElement('div');
+            item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center";
+            item.innerHTML = `<div><span class="text-[9px] font-bold text-blue-500 uppercase">${type}</span><div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5">`;
+            stream.prepend(item);
+            if (stream.children.length > 20) stream.lastChild.remove();
+        }
+
+        // Fetch History on Load
+        fetch('/get-history').then(res => res.json()).then(h => {
+            leadsData = h.reverse();
+            updateTable();
+        });
+
+        const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
+        const channel = pusher.subscribe('my-channel');
+        channel.bind('new-lead', d => addData(d, 'LEAD'));
+        channel.bind('new-click', d => addData(d, 'CLICK'));
+    </script>
+</body>
+</html>
