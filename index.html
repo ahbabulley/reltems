@@ -19,7 +19,6 @@
         
         nav { display: flex; align-items: center; padding: 0 24px; height: 75px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; justify-content: space-between; }
         
-        /* FIX KEDORONG: Menambahkan min-width 0 dan overflow hidden */
         .marquee-container { flex: 1; height: 100%; overflow: hidden; margin: 0 20px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); display: flex; align-items: center; position: relative; min-width: 0; }
         .marquee-text { display: inline-block; white-space: nowrap; position: absolute; animation: marquee 25s linear infinite; font-size: 11px; font-weight: 700; color: var(--sub-text); padding-left: 100%; }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
@@ -81,7 +80,7 @@
                 </div>
             </div>
 
-            <table id="data-table">
+            <table id="data-table" class="w-full">
                 <thead id="table-head"></thead>
                 <tbody id="main-table-body"></tbody>
             </table>
@@ -99,13 +98,13 @@ let leadsData = [];
 let clicksData = [];
 let currentView = 'live';
 
-// SOLID SVG ASSETS - DIPERTABAL (STROKE-WIDTH DITAMBAH PADA PATH)
 const svgIcons = {
     bolt: `<svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`,
     chart: `<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M3 13h2.5v7H3v-7zm6.25-4h2.5v11h-2.5V9zm6.25-5h2.5v16h-2.5V4z"/></svg>`,
     signal: `<svg class="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24"><path d="M3 16h3.5v4H3v-4zm5.5-4h3.5v8h-3.5v-8zm5.5-4h3.5v12H14V8zm5.5-4H23v16h-3.5V4z"/></svg>`,
     crown: `<svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`,
-    fire: `<svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.66 11.5c-.21-.07-.43-.14-.65-.21a9.2 9.2 0 00-1.12-.33c-.44-.09-.9-.14-1.39-.14-2.12 0-3.9 1.25-4.66 3.05a5.5 5.5 0 01-.13-1.05c0-2.43 1.45-4.52 3.53-5.46a.5.5 0 00.22-.68c-.16-.31-.41-.57-.71-.73a5.52 5.52 0 00-5.74.45c-.21.15-.41.32-.6.5a9.54 9.54 0 00-2.4 4.14 9.54 9.54 0 001.32 8.42c1.47 2.12 3.91 3.53 6.69 3.53 4.42 0 8-3.58 8-8 0-1.47-.4-2.84-1.08-4.01z"/></svg>`
+    // TINDER LOGO SVG - LEBIH SOLID & JELAS
+    fire: `<svg class="w-4 h-4 text-[#fe3c72]" fill="currentColor" viewBox="0 0 24 24"><path d="M12.536 21.432a9.122 9.122 0 0 1-5.187-2.07c-3.153-2.535-3.321-7.143-1.464-10.12a.375.375 0 0 1 .632.023c.35 1.05.7 1.87 1.144 2.505.772 1.103 1.956 1.767 3.327 1.767 1.114 0 2.214-.42 2.768-1.574a4.07 4.07 0 0 0 .393-1.685c0-2.31-1.611-3.665-2.617-5.462a.362.362 0 0 1 .49-.49c4.28 1.914 6.945 6.007 6.945 9.778 0 4.283-2.924 7.338-6.431 7.338"/></svg>`
 };
 
 function getFlag(country) {
@@ -117,7 +116,6 @@ function getFlag(country) {
 function toggleMenu() {
     const trigger = document.getElementById('menu-trigger');
     const existing = document.getElementById('nav-popup-menu');
-    
     if (existing) {
         trigger.classList.remove('active');
         existing.remove();
@@ -176,20 +174,20 @@ function updateDisplay() {
     }
 
     if (currentView === 'live') {
-        tableHead.innerHTML = `<tr><th width="20%">USER</th><th width="35%">CLICK ID</th><th width="15%">COUNTRY</th><th width="15%" class="text-center">TIME</th><th width="15%" class="text-right">PAYOUT</th></tr>`;
+        tableHead.innerHTML = `<tr><th class="w-[20%]">USER</th><th class="w-[30%]">CLICK ID</th><th class="w-[20%]">COUNTRY</th><th class="w-[15%] text-center">TIME</th><th class="w-[15%] text-right">PAYOUT</th></tr>`;
         leadsData.forEach(d => {
             const row = mainTable.insertRow();
-            row.innerHTML = `<td class="p-4 font-bold text-blue-500 uppercase">${d.oid||'USR'}</td><td class="font-mono text-xs text-[var(--text)] opacity-70 truncate">${d.click_id}</td><td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow"><span class="text-sm font-bold uppercase">${d.country||'ID'}</span></div></td><td class="text-center text-[10px] opacity-50">${new Date(d.timestamp).toLocaleTimeString()}</td><td class="text-right font-bold text-green-500">$${parseFloat(d.payout).toFixed(2)}</td>`;
+            row.innerHTML = `<td class="w-[20%] p-4 font-bold text-blue-500 uppercase">${d.oid||'USR'}</td><td class="w-[30%] font-mono text-xs text-[var(--text)] opacity-70 truncate">${d.click_id}</td><td class="w-[20%]"> <div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow"><span class="text-sm font-bold uppercase">${d.country||'ID'}</span></div></td><td class="w-[15%] text-center text-[10px] opacity-50">${new Date(d.timestamp).toLocaleTimeString()}</td><td class="w-[15%] text-right font-bold text-green-500">$${parseFloat(d.payout).toFixed(2)}</td>`;
         });
     } else if (currentView === 'perf') {
-        tableHead.innerHTML = `<tr><th width="50%">CLICK ID</th><th width="25%" class="text-center">INFO</th><th width="25%" class="text-right">PAYOUT</th></tr>`;
+        tableHead.innerHTML = `<tr><th class="w-[50%]">CLICK ID</th><th class="w-[25%] text-center">INFO</th><th class="w-[25%] text-right">PAYOUT</th></tr>`;
         sortedPerf.forEach(d => {
             const isKing = d.click_id === kingId;
             const row = mainTable.insertRow();
-            row.innerHTML = `<td class="p-4"><div class="flex items-center gap-3">${isKing ? svgIcons.crown : '<div class="w-5"></div>'}<span class="font-mono text-xs ${isKing ? 'text-yellow-500 font-bold' : 'text-[var(--text)] opacity-70'}">${d.click_id}</span></div></td><td class="text-center text-[10px] font-bold uppercase">${d.count} LEADS</td><td class="text-right font-bold text-green-500">$${d.total.toFixed(2)}</td>`;
+            row.innerHTML = `<td class="w-[50%] p-4"><div class="flex items-center gap-3">${isKing ? svgIcons.crown : '<div class="w-5"></div>'}<span class="font-mono text-xs ${isKing ? 'text-yellow-500 font-bold' : 'text-[var(--text)] opacity-70'}">${d.click_id}</span></div></td><td class="w-[25%] text-center text-[10px] font-bold uppercase">${d.count} LEADS</td><td class="w-[25%] text-right font-bold text-green-500">$${d.total.toFixed(2)}</td>`;
         });
     } else {
-        tableHead.innerHTML = `<tr><th width="40%">CLICK ID</th><th width="20%">COUNTRY</th><th width="20%">STATUS</th><th width="20%" class="text-right">TIME</th></tr>`;
+        tableHead.innerHTML = `<tr><th class="w-[40%]">CLICK ID</th><th class="w-[20%]">COUNTRY</th><th class="w-[20%]">STATUS</th><th class="w-[20%] text-right">TIME</th></tr>`;
         filterClicks();
     }
 }
@@ -201,7 +199,7 @@ function filterClicks() {
     clicksData.forEach(c => {
         if(c.click_id.toLowerCase().includes(s) || (c.country||'').toLowerCase().includes(s)) {
             const row = mainTable.insertRow();
-            row.innerHTML = `<td class="p-4 font-mono text-xs text-blue-400">${c.click_id}</td><td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(c.country)}.svg" class="w-5"><span class="text-sm font-bold uppercase">${c.country||'ID'}</span></div></td><td><span class="text-[9px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded flex items-center gap-1 w-fit">${svgIcons.fire} CLICKED</span></td><td class="text-right text-[10px] opacity-40">${new Date().toLocaleTimeString()}</td>`;
+            row.innerHTML = `<td class="w-[40%] p-4 font-mono text-xs text-blue-400">${c.click_id}</td><td class="w-[20%]"><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(c.country)}.svg" class="w-5"><span class="text-sm font-bold uppercase">${c.country||'ID'}</span></div></td><td class="w-[20%]"><span class="text-[9px] bg-[#fe3c72]/10 text-[#fe3c72] px-2 py-0.5 rounded flex items-center gap-1 w-fit font-bold">${svgIcons.fire} CLICKED</span></td><td class="w-[20%] text-right text-[10px] opacity-40">${new Date().toLocaleTimeString()}</td>`;
         }
     });
 }
