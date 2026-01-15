@@ -95,40 +95,34 @@ const synth = window.speechSynthesis;
 let leadsData = [];
 let processedClickIds = new Set(); 
 
-// 1. Fungsi Izin Notifikasi & Suara
+// 1. Izin Notifikasi & Perbaikan Suara Google
 function initPermissions() {
-    if (Notification.permission !== "granted") {
-        Notification.requestPermission();
-    }
+    if (Notification.permission !== "granted") Notification.requestPermission();
 }
 
-// 2. Fungsi Suara & Notifikasi (Fokus ke Click ID)
 function announceLead(clickId, payout) {
-    // Batalkan suara lama jika ada (agar tidak antri)
-    synth.cancel();
-
-    // Pesan yang akan dibaca Google
-    const message = `Lead baru masuk. Klik ID. ${clickId.split('').join(' ')}. Payout ${payout} dolar.`;
-    const utter = new SpeechSynthesisUtterance(message);
+    synth.cancel(); // Potong suara lama
+    // Eja ID karakter demi karakter agar jelas
+    const spelledId = clickId.split('').join(' ');
+    const utter = new SpeechSynthesisUtterance(`Lead baru. ID. ${spelledId}. Payout ${payout} dolar.`);
     utter.lang = 'id-ID';
-    utter.rate = 1.0; 
+    utter.rate = 1.1; 
     synth.speak(utter);
 
-    // Notifikasi Sistem (Pop-up Windows/Chrome)
     if (Notification.permission === "granted") {
         const n = new Notification("LEAD BARU: " + clickId, {
             body: `ID: ${clickId}\nPayout: $${payout}`,
-            icon: 'https://cdn-icons-png.flaticon.com/512/1162/1162250.png',
-            silent: false // Biar ada bunyi sistem juga
+            icon: 'https://cdn-icons-png.flaticon.com/512/1162/1162250.png'
         });
-        setTimeout(n.close.bind(n), 8000); // Notif tampil 8 detik
+        setTimeout(() => n.close(), 8000);
     }
 }
 
-// SVG Icons
+// 2. SVG Icons (Warna Dinamis: currentColor akan ikut warna teks)
 const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
-const userSvg = `<svg class="w-6 h-6 text-gray-500/30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
+const userSvg = `<svg class="w-6 h-6 opacity-50" style="color: var(--text)" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
+// 3. Update Tabel
 function updateTable() {
     if (!leadsData.length) return;
     const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)));
@@ -138,30 +132,31 @@ function updateTable() {
         const row = mainTable.insertRow();
         row.innerHTML = `
             <td class="p-3"><div class="flex items-center gap-3">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid || 'USER'}</span></div></td>
-            <td class="text-gray-400 font-mono text-[10px]">${data.click_id}</td>
+            <td class="text-gray-400 font-mono text-sm">${data.click_id}</td>
             <td><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-6 shadow-sm"></td>
-            <td class="text-gray-500 text-[10px] text-center">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
+            <td class="text-gray-500 text-xs text-center">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
             <td class="font-bold text-green-500 text-right text-lg">$${parseFloat(data.payout).toFixed(2)}</td>
         `;
     });
 }
 
+// 4. Logika Data (Real-time & Anti Delay)
 function handleData(data, type, isNew = false) {
     if (type === 'LEAD') {
-        if (!leadsData.some(l => l.click_id === data.click_id && Math.abs(l.timestamp - data.timestamp) < 2000)) {
+        // Cek duplikat ketat agar bisa dites berkali-kali tanpa delay lama
+        if (!leadsData.some(l => l.click_id === data.click_id && Math.abs(l.timestamp - data.timestamp) < 1000)) {
             leadsData.unshift(data);
             if (leadsData.length > 50) leadsData.pop();
             updateTable();
-            if (isNew) {
-                announceLead(data.click_id, data.payout);
-            }
+            if (isNew) announceLead(data.click_id, data.payout);
         }
     } else if (type === 'CLICK') {
+        // Click tetap masuk sidebar (maks 5) tanpa suara
         if (!processedClickIds.has(data.click_id)) {
             processedClickIds.add(data.click_id);
             const item = document.createElement('div');
             item.className = "p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] flex justify-between items-center type-CLICK mb-2 row-animate";
-            item.innerHTML = `<div><span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span><div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
+            item.innerHTML = `<div><span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span><div class="text-sm text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
             stream.prepend(item);
             const boxes = stream.querySelectorAll('.type-CLICK');
             if (boxes.length > 5) {
@@ -173,9 +168,13 @@ function handleData(data, type, isNew = false) {
     }
 }
 
+// 5. Sync Otomatis (Hanya Backup)
 async function syncData() {
     try {
-        const [resL, resC] = await Promise.all([fetch('/get-history?cb='+Date.now()), fetch('/get-clicks?cb='+Date.now())]);
+        const [resL, resC] = await Promise.all([
+            fetch('/get-history?_t=' + Date.now()), 
+            fetch('/get-clicks?_t=' + Date.now())
+        ]);
         const leads = await resL.json();
         const clicks = await resC.json();
         if (Array.isArray(leads)) [...leads].reverse().forEach(l => handleData(l, 'LEAD', false));
@@ -188,14 +187,30 @@ initPermissions();
 syncData();
 setInterval(syncData, 10000);
 
+// PUSHER (Utama Tanpa Delay)
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
-channel.bind('new-lead', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'LEAD', true));
-channel.bind('new-click', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'CLICK', false));
+channel.bind('new-lead', d => {
+    const dObj = typeof d === 'string' ? JSON.parse(d) : d;
+    handleData(dObj, 'LEAD', true);
+});
+channel.bind('new-click', d => {
+    const dObj = typeof d === 'string' ? JSON.parse(d) : d;
+    handleData(dObj, 'CLICK', false);
+});
 
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-document.body.addEventListener('click', () => { synth.speak(new SpeechSynthesisUtterance("")); initPermissions(); }, {once: true});
-</script>
+function toggleTheme() {
+    const isL = document.body.classList.toggle('light-mode');
+    document.getElementById('sun-icon').classList.toggle('hidden', isL);
+    document.getElementById('moon-icon').classList.toggle('hidden', !isL);
+}
+
+// Pancing izin audio
+document.addEventListener('click', () => { 
+    synth.speak(new SpeechSynthesisUtterance("")); 
+    initPermissions(); 
+}, {once: true});
 </script>
 </body>
 </html>
