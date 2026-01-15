@@ -91,43 +91,55 @@ function updateTable(latestId = null) {
     });
 }
 
+const displayedIds = new Set();
+
 function addData(data, type, shouldPlaySound = true) {
+    // Cek apakah click_id sudah ada di layar, jika sudah ada, jangan masukkan lagi
+    if (displayedIds.has(data.click_id + type)) return;
+    displayedIds.add(data.click_id + type);
+
     if (type === 'LEAD') {
         if (shouldPlaySound) { leadSound.currentTime = 0; leadSound.play().catch(() => {}); }
-        leadsData.unshift(data);
-        if (leadsData.length > 50) leadsData.pop();
-        updateTable(data.click_id);
+        // Cek agar tidak duplikat di array leadsData
+        if (!leadsData.find(l => l.click_id === data.click_id)) {
+            leadsData.unshift(data);
+            if (leadsData.length > 50) leadsData.pop();
+            updateTable(data.click_id);
+        }
     }
     
     const item = document.createElement('div');
-    // Beri ID unik agar bisa dihitung jumlahnya
     item.className = `p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center activity-${type}`;
     item.innerHTML = `<div><span class="text-[9px] font-bold ${type === 'LEAD' ? 'text-green-500' : 'text-blue-500'} uppercase">${type}</span><div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
     
     stream.prepend(item);
 
-    // Filter agar CLICK hanya tampil maksimal 5 di sidebar
+    // Batasi tampilan Click maksimal 5
     const allClicks = stream.getElementsByClassName('activity-CLICK');
-    if (allClicks.length > 5) { stream.removeChild(allClicks[allClicks.length - 1]); }
+    while (allClicks.length > 5) { 
+        const lastId = allClicks[allClicks.length - 1].querySelector('.font-mono').innerText;
+        displayedIds.delete(lastId + 'CLICK');
+        stream.removeChild(allClicks[allClicks.length - 1]); 
+    }
     
-    // Batasi LEAD juga agar tidak memenuhi sidebar (misal max 15)
+    // Batasi tampilan Lead di sidebar maksimal 10
     const allLeads = stream.getElementsByClassName('activity-LEAD');
-    if (allLeads.length > 15) { stream.removeChild(allLeads[allLeads.length - 1]); }
+    while (allLeads.length > 10) { stream.removeChild(allLeads[allLeads.length - 1]); }
 }
 
-// Load riwayat saat buka web
+// 1. Ambil history Lead
 fetch('/get-history').then(res => res.json()).then(h => { 
     leadsData = h.slice(0, 50); 
     updateTable(); 
-    // Tampilkan lead di sidebar
     [...h].reverse().forEach(ld => addData(ld, 'LEAD', false));
 });
 
+// 2. Ambil history Click
 fetch('/get-clicks').then(res => res.json()).then(clicks => {
-    // Tampilkan click lama dari KV ke sidebar (maks 5)
     [...clicks].reverse().forEach(c => addData(c, 'CLICK', false));
 });
 
+// 3. Koneksi Pusher
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
 channel.bind('new-lead', d => addData(d, 'LEAD'));
