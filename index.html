@@ -65,6 +65,7 @@ let leadsData = [];
 let clicksData = [];
 let currentView = 'live';
 
+// Ikon hanya untuk Performance
 const crownSvg = `<svg class="w-5 h-5 text-yellow-500 animate-bounce" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 const userSvg = `<svg class="w-5 h-5 opacity-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
@@ -87,7 +88,6 @@ function switchView(view) {
     currentView = view;
     document.getElementById('search-container').classList.toggle('hidden', view !== 'traffic');
     const title = document.getElementById('view-title');
-    // Emoji Judul disesuaikan dengan SVG tombol
     if(view === 'live') title.innerText = "🚀 REALTIME LEADS";
     else if(view === 'perf') title.innerText = "🏆 PERFORMANCE";
     else title.innerText = "📡 LIVE TRAFFIC (CLICKS)";
@@ -102,8 +102,10 @@ function updateDisplay() {
     if (currentView === 'live' || currentView === 'perf') {
         tableHead.innerHTML = `<tr><th width="20%">USER</th><th width="35%">CLICK ID</th><th width="15%">COUNTRY</th><th width="15%" class="text-center">INFO</th><th width="15%" class="text-right">PAYOUT</th></tr>`;
         let renderData = [];
+        
         if(currentView === 'live') {
             renderData = leadsData;
+            // Cari data tertinggi hanya untuk Marquee
             leadsData.forEach(l => { if(parseFloat(l.payout) >= topVal) { topVal = parseFloat(l.payout); kingId = l.click_id; } });
         } else {
             const perfMap = {};
@@ -115,15 +117,41 @@ function updateDisplay() {
             renderData = Object.values(perfMap).sort((a,b) => b.total - a.total);
             if(renderData[0]) { kingId = renderData[0].click_id; topVal = renderData[0].total; }
         }
+
         renderData.forEach(d => {
             const isKing = d.click_id === kingId && kingId !== "";
             const pValue = currentView === 'perf' ? d.total : parseFloat(d.payout);
             const row = mainTable.insertRow();
-            if (isKing) row.style.background = "rgba(234, 179, 8, 0.05)";
-            row.innerHTML = `<td class="p-4"><div class="flex items-center gap-2">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing?'text-yellow-500':'text-blue-500'} uppercase">${d.oid||'USR'}</span></div></td><td class="font-mono text-xs opacity-50 truncate">${d.click_id}</td><td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${(d.country||'id').toLowerCase()}.svg" class="w-5 shadow"><span class="text-[10px] font-bold uppercase">${d.country||'ID'}</span></div></td><td class="text-center text-[10px] opacity-50">${currentView==='perf' ? d.count+' LEADS' : new Date(d.timestamp).toLocaleTimeString()}</td><td class="text-right font-bold text-green-500">$${pValue.toFixed(2)}</td>`;
+            
+            // Logika Ikon: Hanya muncul jika di View Performance
+            let iconHtml = "";
+            if(currentView === 'perf') {
+                iconHtml = isKing ? crownSvg : userSvg;
+            }
+
+            row.innerHTML = `
+                <td class="p-4">
+                    <div class="flex items-center gap-2">
+                        ${iconHtml}
+                        <span class="font-bold ${isKing && currentView === 'perf' ? 'text-yellow-500' : 'text-blue-500'} uppercase">${d.oid||'USR'}</span>
+                    </div>
+                </td>
+                <td class="font-mono text-xs opacity-50 truncate">${d.click_id}</td>
+                <td>
+                    <div class="flex items-center gap-2">
+                        <img src="https://flagicons.lipis.dev/flags/4x3/${(d.country||'id').toLowerCase()}.svg" class="w-5 shadow">
+                        <span class="text-[10px] font-bold uppercase">${d.country||'ID'}</span>
+                    </div>
+                </td>
+                <td class="text-center text-[10px] opacity-50">
+                    ${currentView==='perf' ? d.count+' LEADS' : new Date(d.timestamp).toLocaleTimeString()}
+                </td>
+                <td class="text-right font-bold text-green-500">$${pValue.toFixed(2)}</td>
+            `;
         });
+        
         const m = document.getElementById('marquee-text');
-        if(m && kingId) m.innerHTML = `🏆 KING: <span class="text-yellow-500">${kingId}</span> // VALUE: <span class="text-green-500">$${topVal.toFixed(2)}</span> // STATUS: SECURE`;
+        if(m && kingId) m.innerHTML = `TOP RECORD: <span class="text-yellow-500">${kingId}</span> // VALUE: <span class="text-green-500">$${topVal.toFixed(2)}</span> // STATUS: SECURE`;
     } else {
         tableHead.innerHTML = `<tr><th width="40%">CLICK ID</th><th width="20%">COUNTRY</th><th width="20%">STATUS</th><th width="20%" class="text-right">TIME</th></tr>`;
         filterClicks();
@@ -142,17 +170,12 @@ function filterClicks() {
     });
 }
 
-// HANDLER DATA (ZERO DELAY)
 function handleData(data, type, isNew = false) {
     if (type === 'LEAD') {
         leadsData.unshift(data);
         if (leadsData.length > 500) leadsData.pop();
-        
-        // UPDATE TAMPILAN DULU (Agar Nol Delay)
         updateDisplay(); 
-
         if (isNew) {
-            // Baru jalankan notif & suara setelah tabel update
             if (Notification.permission === "granted") {
                 new Notification("🔥 LEAD MASUK!", { body: `$${data.payout} - ID: ${data.click_id}` });
             }
