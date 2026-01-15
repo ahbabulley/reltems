@@ -94,13 +94,11 @@ function updateTable(latestId = null) {
 const displayedIds = new Set();
 
 function addData(data, type, shouldPlaySound = true) {
-    // Cek apakah click_id sudah ada di layar, jika sudah ada, jangan masukkan lagi
-    if (displayedIds.has(data.click_id + type)) return;
-    displayedIds.add(data.click_id + type);
-
+    // 1. Logika khusus untuk Tabel LEAD (Halaman Utama)
     if (type === 'LEAD') {
         if (shouldPlaySound) { leadSound.currentTime = 0; leadSound.play().catch(() => {}); }
-        // Cek agar tidak duplikat di array leadsData
+        
+        // Cek agar baris tabel tidak duplikat berdasarkan click_id
         if (!leadsData.find(l => l.click_id === data.click_id)) {
             leadsData.unshift(data);
             if (leadsData.length > 50) leadsData.pop();
@@ -108,19 +106,33 @@ function addData(data, type, shouldPlaySound = true) {
         }
     }
     
+    // 2. Logika Sidebar (Live Traffic)
     const item = document.createElement('div');
+    // Tambahkan class penanda tipe (CLICK atau LEAD)
     item.className = `p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center activity-${type}`;
-    item.innerHTML = `<div><span class="text-[9px] font-bold ${type === 'LEAD' ? 'text-green-500' : 'text-blue-500'} uppercase">${type}</span><div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div></div><img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
+    item.innerHTML = `
+        <div>
+            <span class="text-[9px] font-bold ${type === 'LEAD' ? 'text-green-500' : 'text-blue-500'} uppercase">${type}</span>
+            <div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div>
+        </div>
+        <img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
     
+    // Masukkan data baru ke urutan paling atas di sidebar
     stream.prepend(item);
 
-    // Batasi tampilan Click maksimal 5
+    // 3. BATASI TAMPILAN (MAKSIMAL 5 CLICK)
     const allClicks = stream.getElementsByClassName('activity-CLICK');
-    while (allClicks.length > 5) { 
-        const lastId = allClicks[allClicks.length - 1].querySelector('.font-mono').innerText;
-        displayedIds.delete(lastId + 'CLICK');
-        stream.removeChild(allClicks[allClicks.length - 1]); 
+    if (allClicks.length > 5) {
+        // Hapus kotak CLICK yang paling bawah (paling lama)
+        stream.removeChild(allClicks[allClicks.length - 1]);
     }
+    
+    // Batasi juga LEAD di sidebar agar tidak terlalu panjang (misal maks 10)
+    const allLeads = stream.getElementsByClassName('activity-LEAD');
+    if (allLeads.length > 10) {
+        stream.removeChild(allLeads[allLeads.length - 1]);
+    }
+}
     
     // Batasi tampilan Lead di sidebar maksimal 10
     const allLeads = stream.getElementsByClassName('activity-LEAD');
