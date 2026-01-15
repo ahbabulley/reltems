@@ -114,48 +114,71 @@
     </div>
 
     <script>
-        const mainTable = document.getElementById('main-table-body');
-        const stream = document.getElementById('activity-stream');
-        let allTraffic = JSON.parse(localStorage.getItem('phei_cache') || '[]');
+const mainTable = document.getElementById('main-table-body');
+    const stream = document.getElementById('activity-stream');
+    let allTraffic = JSON.parse(localStorage.getItem('phei_cache') || '[]');
 
-        function renderUI(latestId = null) {
-            const leads = allTraffic.filter(d => d.type === 'LEAD');
-            const clicks = allTraffic.filter(d => d.type === 'CLICK').slice(0, 5);
-            const maxVal = leads.length > 0 ? Math.max(...leads.map(l => l.payout)) : -1;
+    function renderUI(latestId = null) {
+        // LEADS masuk ke TABEL UTAMA
+        const leads = allTraffic.filter(d => d.type === 'LEAD');
+        // CLICKS masuk ke SIDEBAR (Limit 5)
+        const clicks = allTraffic.filter(d => d.type === 'CLICK').slice(0, 5);
+        
+        const maxVal = leads.length > 0 ? Math.max(...leads.map(l => l.payout)) : -1;
 
-            mainTable.innerHTML = leads.map(d => {
-                const isK = d.payout > 0 && d.payout === maxVal;
-                const cc = (d.country || 'id').toLowerCase();
-                return `<tr class="${latestId === d.click_id ? 'bg-cyan-500/10' : ''} border-b border-[var(--border)]">
-                    <td class="font-bold ${isK ? 'text-yellow-500' : 'text-cyan-400'} uppercase">${d.oid}</td>
-                    <td class="text-gray-500 text-[10px]">${d.click_id}</td>
-                    <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${cc}.svg" class="w-4 shadow">${cc.toUpperCase()}</div></td>
-                    <td class="text-center opacity-40 text-[9px]">${new Date(d.timestamp).toLocaleTimeString()}</td>
-                    <td class="text-right font-bold text-green-400">$${d.payout.toFixed(2)}</td>
-                </tr>`;
-            }).join('');
+        // Render Tabel Lead
+        mainTable.innerHTML = leads.map(d => {
+            const isK = d.payout > 0 && d.payout === maxVal;
+            const cc = (d.country || 'id').toLowerCase();
+            return `<tr class="${latestId === d.click_id ? 'row-new' : ''} border-b border-[var(--border)]">
+                <td class="font-bold ${isK ? 'text-yellow-500' : 'text-cyan-400'} uppercase">${d.oid}</td>
+                <td class="text-gray-500 text-[10px]">${d.click_id}</td>
+                <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${cc}.svg" class="w-4 shadow">${cc.toUpperCase()}</div></td>
+                <td class="text-center opacity-40 text-[9px]">${new Date(d.timestamp).toLocaleTimeString()}</td>
+                <td class="text-right font-bold text-green-400">$${d.payout.toFixed(2)}</td>
+            </tr>`;
+        }).join('');
 
-            stream.innerHTML = clicks.map(d => {
-                const cc = (d.country || 'id').toLowerCase();
-                return `<div class="p-2 border border-[var(--border)] rounded bg-black/10 flex justify-between items-center text-[9px]">
-                    <div class="flex flex-col"><span class="text-cyan-400 font-bold">CLICK</span><span class="text-gray-500 truncate w-28">${d.click_id}</span></div>
-                    <img src="https://flagicons.lipis.dev/flags/4x3/${cc}.svg" class="w-4 shadow">
-                </div>`;
-            }).join('');
-            localStorage.setItem('phei_cache', JSON.stringify(allTraffic));
+        // Render Sidebar Click
+        stream.innerHTML = clicks.map(d => {
+            const cc = (d.country || 'id').toLowerCase();
+            return `<div class="p-2 border border-[var(--border)] rounded bg-black/10 flex justify-between items-center text-[9px]">
+                <div class="flex flex-col"><span class="text-cyan-400 font-bold">CLICK</span><span class="text-gray-500 truncate w-24">${d.click_id}</span></div>
+                <img src="https://flagicons.lipis.dev/flags/4x3/${cc}.svg" class="w-4 shadow">
+            </div>`;
+        }).join('');
+        
+        localStorage.setItem('phei_cache', JSON.stringify(allTraffic));
+    }
+
+    // Render Awal
+    renderUI();
+
+    // Ambil history dari KV via Worker
+    fetch('/get-history').then(r => r.json()).then(d => { 
+        if (Array.isArray(d)) { 
+            allTraffic = d; 
+            renderUI(); 
+        } 
+    });
+
+    const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
+    const channel = pusher.subscribe('my-channel');
+    
+    // SATU PINTU: Mau Lead atau Click semua lewat sini
+    channel.bind('new-data', data => {
+        const d = typeof data === 'string' ? JSON.parse(data) : data;
+        allTraffic.unshift(d);
+        
+        // Buang data lama (biar gak berat)
+        if (allTraffic.length > 100) allTraffic.pop();
+        
+        if (d.type === 'LEAD') {
+            const s = document.getElementById('leadSound');
+            if(s) { s.currentTime = 0; s.play().catch(()=>{}); }
         }
-
-        renderUI();
-        fetch('/get-history').then(r => r.json()).then(d => { if (Array.isArray(d)) { allTraffic = d; renderUI(); } });
-
-        const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
-        const channel = pusher.subscribe('my-channel');
-        const handle = (d, type) => {
-            allTraffic.unshift({...d, type});
-            if (allTraffic.length > 100) allTraffic.pop();
-            if (type === 'LEAD') document.getElementById('leadSound').play().catch(()=>{});
-            renderUI(d.click_id);
-        };
+        renderUI(d.click_id);
+    });
         channel.bind('new-lead', d => handle(d, 'LEAD'));
         channel.bind('new-click', d => handle(d, 'CLICK'));
     </script>
