@@ -104,14 +104,16 @@ function toggleTheme() {
     document.getElementById('moon-icon').classList.toggle('hidden', !isL);
 }
 
-// Update Tabel Utama (Hanya untuk LEAD)
+// Fungsi Update Tabel Utama (Untuk Lead)
 function updateTable(latestId = null) {
     const maxPayout = Math.max(...leadsData.map(l => parseFloat(l.payout)), 0);
     mainTable.innerHTML = "";
     leadsData.forEach((data, index) => {
         const isKing = parseFloat(data.payout) === maxPayout && maxPayout > 0;
         const row = mainTable.insertRow();
-        if (latestId && index === 0) row.classList.add('row-animate');
+        // Animasi highlight jika data baru masuk
+        if (latestId && data.click_id === latestId) row.classList.add('row-animate');
+        
         row.innerHTML = `
             <td><div class="flex items-center gap-4">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid}</span></div></td>
             <td class="text-gray-400 font-medium truncate">${data.click_id}</td>
@@ -122,60 +124,55 @@ function updateTable(latestId = null) {
     });
 }
 
-// Fungsi Tambah Data ke Sidebar (Live Traffic)
+// Fungsi Handle Data Masuk
 function addData(data, type, shouldPlaySound = true) {
-    // 1. Jika LEAD, update tabel utama
     if (type === 'LEAD') {
-        if (shouldPlaySound) { leadSound.currentTime = 0; leadSound.play().catch(() => {}); }
+        // 1. Play Suara KAYA
+        if (shouldPlaySound) { 
+            leadSound.currentTime = 0; 
+            leadSound.play().catch(e => console.log("Audio play blocked", e)); 
+        }
+        
+        // 2. Masukkan ke Tabel (Cek duplikat agar tidak double saat history dipanggil)
         if (!leadsData.find(l => l.click_id === data.click_id)) {
             leadsData.unshift(data);
             if (leadsData.length > 50) leadsData.pop();
             updateTable(data.click_id);
         }
-    }
-    
-    // 2. Buat Kotak di Sidebar
-    const item = document.createElement('div');
-    item.className = `p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center activity-box type-${type}`;
-    item.innerHTML = `
-        <div>
-            <span class="text-[9px] font-bold ${type === 'LEAD' ? 'text-green-500' : 'text-blue-500'} uppercase">${type}</span>
-            <div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div>
-        </div>
-        <img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
-    
-    stream.prepend(item);
+    } else if (type === 'CLICK') {
+        // 3. Masukkan ke Live Traffic (Hanya CLICK)
+        const item = document.createElement('div');
+        item.className = `p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] row-animate flex justify-between items-center type-CLICK`;
+        item.innerHTML = `
+            <div>
+                <span class="text-[9px] font-bold text-blue-500 uppercase">CLICK</span>
+                <div class="text-[11px] text-gray-400 font-mono truncate w-40">${data.click_id}</div>
+            </div>
+            <img src="https://flagicons.lipis.dev/flags/4x3/${(data.country||'id').toLowerCase()}.svg" class="w-5 shadow">`;
+        
+        stream.prepend(item);
 
-    // 3. Batasi hanya 5 CLICK di Sidebar
-    const allClicks = stream.querySelectorAll('.type-CLICK');
-    if (allClicks.length > 5) {
-        stream.removeChild(allClicks[allClicks.length - 1]);
-    }
-
-    // 4. Batasi LEAD di Sidebar (agar tidak kepanjangan)
-    const allLeads = stream.querySelectorAll('.type-LEAD');
-    if (allLeads.length > 10) {
-        stream.removeChild(allLeads[allLeads.length - 1]);
+        // Batasi hanya 5 CLICK di Sidebar
+        const allClicks = stream.querySelectorAll('.type-CLICK');
+        if (allClicks.length > 5) {
+            stream.removeChild(allClicks[allClicks.length - 1]);
+        }
     }
 }
 
-// --- INISIALISASI DATA SAAT RELOAD ---
-
-// Ambil history Lead
+// --- LOAD HISTORY (Saat Refresh) ---
 fetch('/get-history').then(res => res.json()).then(h => { 
     if(Array.isArray(h)) {
         leadsData = h.slice(0, 50); 
         updateTable(); 
-        [...h].reverse().forEach(ld => addData(ld, 'LEAD', false));
     }
-}).catch(e => console.log("History error:", e));
+});
 
-// Ambil history Click
 fetch('/get-clicks').then(res => res.json()).then(clicks => {
     if(Array.isArray(clicks)) {
         [...clicks].reverse().forEach(c => addData(c, 'CLICK', false));
     }
-}).catch(e => console.log("Click history error:", e));
+});
 
 // --- PUSHER (REALTIME) ---
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
@@ -183,12 +180,12 @@ const channel = pusher.subscribe('my-channel');
 
 channel.bind('new-lead', d => {
     const data = typeof d === 'string' ? JSON.parse(d) : d;
-    addData(data, 'LEAD');
+    addData(data, 'LEAD', true); // Bunyi KAYA aktif
 });
 
 channel.bind('new-click', d => {
     const data = typeof d === 'string' ? JSON.parse(d) : d;
-    addData(data, 'CLICK');
+    addData(data, 'CLICK', false);
 });
     </script>
 </body>
