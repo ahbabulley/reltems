@@ -1,17 +1,15 @@
-export async function onRequestPost(context) {
+export async function onRequest(context) {
   const { request, env } = context;
 
+  // Izinkan semua method (GET/POST) karena tiap network beda-beda
   try {
-    // 1. Ambil data dari URL (Postback URL biasanya pake Query Params)
     const url = new URL(request.url);
-    const click_id = url.searchParams.get('click_id');
-    const oid = url.searchParams.get('oid') || 'UNKNOWN'; // Team/ID
-    const payout = url.searchParams.get('payout') || '0';
-    const country = url.searchParams.get('country') || 'ID';
-
-    if (!click_id) {
-      return new Response('Missing click_id', { status: 400 });
-    }
+    
+    // Ambil data dari parameter URL
+    const click_id = url.searchParams.get('click_id') || "NO_CLICK_ID";
+    const oid = url.searchParams.get('oid') || "UNKNOWN";
+    const payout = url.searchParams.get('payout') || "0";
+    const country = url.searchParams.get('country') || "id";
 
     const newLead = {
       click_id,
@@ -21,39 +19,49 @@ export async function onRequestPost(context) {
       timestamp: Date.now()
     };
 
-    // 2. Simpan ke Cloudflare KV (Biar direload data nggak hilang)
-    // Ambil history lama dulu
+    // 1. SIMPAN KE KV (BIAR RELOAD ENGGAK HILANG)
+    // Ambil data lama
     const historyRaw = await env.ROWX_DB.get('leads_history');
     let history = historyRaw ? JSON.parse(historyRaw) : [];
 
-    // Tambah data baru ke urutan paling atas
-    history.push(newLead);
+    // Tambah yang baru ke urutan pertama
+    history.unshift(newLead);
 
-    // Batasi histori maksimal 50 data biar KV nggak bengkak
-    if (history.length > 50) {
-      history = history.slice(-50);
-    }
+    // Batasi 50 biar kenceng
+    if (history.length > 50) history = history.slice(0, 50);
 
-    // Simpan balik ke KV
+    // Save balik ke KV
     await env.ROWX_DB.put('leads_history', JSON.stringify(history));
 
-    // 3. Kirim sinyal Real-time ke Pusher
-    const pusherData = {
+    // 2. KIRIM KE PUSHER (BIAR LIVE MUNCUL & BUNYI)
+    const pusherConfig = {
       appId: "1814631",
       key: "6bc0867b80098f3e3424",
-      secret: "647f3b89b88229f63564", // JANGAN SEBARKAN SECRET INI
-      cluster: "ap1",
+      secret: "647f3b89b88229f63564",
+      cluster: "ap1"
     };
 
-    // Fungsi helper untuk auth Pusher manual di Workers
     const body = JSON.stringify({
       name: "new-lead",
       channels: ["my-channel"],
       data: JSON.stringify(newLead)
     });
 
-    const fetchPusher = await fetch(
-      `https://api-${pusherData.cluster}.pusher.com/apps/${pusherData.appId}/events?auth_key=${pusherData.key}&auth_timestamp=${Math.floor(Date.now() / 1000)}&auth_version=1.0&body_md5=${await md5(body)}&auth_signature=${await sign(body, pusherData)}`,
+    const timestamp = Math.floor(Date.now() / 1000);
+    
+    // Auth Pusher Signature
+    const bodyMd5 = await crypto.subtle.digest('MD5', new TextEncoder().encode(body))
+      .then(hash => Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join(''));
+    
+    const authQueryString = `auth_key=${pusherConfig.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
+    const stringToSign = `POST\n/apps/${pusherConfig.appId}/events\n${authQueryString}`;
+    
+    const hmacKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(pusherConfig.secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const signature = await crypto.subtle.sign('HMAC', hmacKey, new TextEncoder().encode(stringToSign))
+      .then(sig => Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join(''));
+
+    await fetch(
+      `https://api-${pusherConfig.cluster}.pusher.com/apps/${pusherConfig.appId}/events?${authQueryString}&auth_signature=${signature}`,
       {
         method: 'POST',
         body: body,
@@ -61,28 +69,12 @@ export async function onRequestPost(context) {
       }
     );
 
-    return new Response('Postback Received & Saved', { status: 200 });
+    return new Response('PHEI 2026 - SUCCESS', { 
+        status: 200,
+        headers: { "Access-Control-Allow-Origin": "*" } 
+    });
 
   } catch (err) {
-    return new Response('Error: ' + err.message, { status: 500 });
+    return new Response('PHEI ERROR: ' + err.message, { status: 500 });
   }
-}
-
-// Helper functions untuk security Pusher (HMAC-SHA256)
-async function md5(text) {
-  const msgUint8 = new TextEncoder().encode(text);
-  const hashBuffer = await crypto.subtle.digest('MD5', msgUint8);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function sign(body, config) {
-  const timestamp = Math.floor(Date.now() / 1000);
-  const bodyMd5 = await md5(body);
-  const authQueryString = `auth_key=${config.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
-  const stringToSign = `POST\n/apps/${config.appId}/events\n${authQueryString}`;
-  
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey('raw', encoder.encode(config.secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(stringToSign));
-  return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
