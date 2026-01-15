@@ -101,7 +101,8 @@ function initPermissions() {
     if (Notification.permission !== "granted") Notification.requestPermission();
 }
 
-function announceLead(clickId, payout) {
+function announceLead(clickId, payout, country) {
+    // 1. Suara Google
     synth.cancel(); 
     const spelledId = clickId.substring(0, 6).split('').join(' ');
     const utter = new SpeechSynthesisUtterance(`Lead baru. Klik I D. ${spelledId}. Payout ${payout} dolar.`);
@@ -109,12 +110,22 @@ function announceLead(clickId, payout) {
     utter.rate = 1.0; 
     synth.speak(utter);
 
+    // 2. Notifikasi Sistem Browser
     if (Notification.permission === "granted") {
         new Notification("LEAD BARU: " + clickId, {
             body: `ID: ${clickId}\nPayout: $${payout}`,
             icon: 'https://cdn-icons-png.flaticon.com/512/1162/1162250.png'
         });
     }
+
+    // 3. OTOMATIS KIRIM TELEGRAM
+    const botToken = "8294616704:AAF7M8RQkNKdkJeNvVdeGFG7zrU26vo7sao";
+    const chatId = "-1002258281914";
+    const pesan = `🔥 LEAD MASUK! 🔥\n\nID: ${clickId}\nPayout: $${payout}\nNegara: ${country || 'ID'}\nStatus: Berhasil`;
+    
+    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendmessage?chat_id=${chatId}&text=${encodeURIComponent(pesan)}`;
+    
+    fetch(telegramUrl).catch(err => console.error("Gagal kirim Telegram", err));
 }
 
 // 2. SVG Icons Dinamis (Ikut Tema)
