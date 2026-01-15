@@ -145,18 +145,40 @@ const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill=
 const userSvg = `<svg class="w-6 h-6" style="color: var(--text); opacity: 0.7;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
 function updateTable() {
-    const maxPayout = leadsData.length > 0 ? Math.max(...leadsData.map(l => parseFloat(l.payout))) : 0;
+    if (leadsData.length === 0) return;
+
+    // 1. CARI PAYOUT TERTINGGI (Pastikan dikonversi ke angka)
+    const allPayouts = leadsData.map(l => parseFloat(l.payout) || 0);
+    const maxPayout = Math.max(...allPayouts);
+
     mainTable.innerHTML = "";
+    
     leadsData.forEach((data) => {
-        const isKing = parseFloat(data.payout) === maxPayout && maxPayout > 0;
+        const currentPayout = parseFloat(data.payout) || 0;
+        
+        // 2. CEK APAKAH BARIS INI PEMEGANG REKOR (Mahkota)
+        // Syarat: payout sama dengan maxPayout DAN maxPayout bukan nol
+        const isKing = currentPayout === maxPayout && maxPayout > 0;
+        
         const countryCode = (data.country || 'ID').toUpperCase();
         const row = mainTable.insertRow();
+        
         row.innerHTML = `
-            <td class="p-3"><div class="flex items-center gap-3">${isKing ? crownSvg : userSvg}<span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid || 'USER'}</span></div></td>
+            <td class="p-3">
+                <div class="flex items-center gap-3">
+                    ${isKing ? crownSvg : userSvg}
+                    <span class="font-bold ${isKing ? 'text-yellow-500' : 'text-blue-500'} uppercase">${data.oid || 'USER'}</span>
+                </div>
+            </td>
             <td class="text-gray-400 font-mono text-xs">${data.click_id}</td>
-            <td><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6"><span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span></div></td>
+            <td>
+                <div class="flex items-center gap-2">
+                    <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6 shadow-sm">
+                    <span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span>
+                </div>
+            </td>
             <td class="text-gray-500 text-[10px] text-center">${new Date(data.timestamp || Date.now()).toLocaleTimeString()}</td>
-            <td class="font-bold text-green-500 text-right text-lg">$${parseFloat(data.payout).toFixed(2)}</td>
+            <td class="font-bold text-green-500 text-right text-lg">$${currentPayout.toFixed(2)}</td>
         `;
     });
 }
