@@ -91,24 +91,15 @@
 <script>
 const mainTable = document.getElementById('main-table-body');
 const stream = document.getElementById('activity-stream');
-const marqueeContainer = document.getElementById('marquee-text'); // Pastikan ada ID ini di elemen marquee Anda
 const synth = window.speechSynthesis;
 
 let leadsData = [];
 
-// 1. AUTO RESET JAM 7 PAGI
-function checkAutoReset() {
-    const now = new Date();
-    if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
-        leadsData = [];
-        mainTable.innerHTML = "";
-        stream.innerHTML = "";
-        if(marqueeContainer) marqueeContainer.innerText = "WAITING FOR FIRST LEAD...";
-    }
+// 1. IZIN & SUARA
+function initPermissions() {
+    if (Notification.permission !== "granted") Notification.requestPermission();
 }
-setInterval(checkAutoReset, 1000);
 
-// 2. FUNGSI ANNOUNCE & TELEGRAM
 async function announceLead(clickId, payout, country) {
     synth.cancel(); 
     const spelledId = clickId.substring(0, 6).split('').join(' ');
@@ -120,43 +111,46 @@ async function announceLead(clickId, payout, country) {
         new Notification("LEAD BARU: " + clickId, { body: `Payout: $${payout}` });
     }
 
+    // TELEGRAM
     const botToken = "8294616704:AAF7M8RQkNKdkJeNvVdeGFG7zrU26vo7sao";
     const chatId = "-1002258281914";
     const pesan = `🔥 *LEAD MASUK!* 🔥\n\n🆔 *ID:* \`${clickId}\` \n💰 *Payout:* $${payout}\n🌍 *Negara:* ${country || 'ID'}`;
     fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(pesan)}&parse_mode=Markdown`).catch(e => {});
 }
 
-// 3. SVG ICONS
+// 2. ICONS
 const crownSvg = `<svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 const userSvg = `<svg class="w-6 h-6" style="color: var(--text); opacity: 0.5;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
-// 4. UPDATE TABEL & MARQUEE (LOGIKA MAHKOTA BERDASARKAN ID)
-function updateTable() {
-    if (leadsData.length === 0) return;
+// 3. UPDATE TABEL & MARQUEE
+function updateDisplay() {
+    if (!leadsData || leadsData.length === 0) return;
 
-    // Cari Click ID yang punya payout tertinggi
-    let topClickId = "";
-    let maxPayoutFound = 0;
+    // A. Cari Payout Tertinggi & Siapa Pemiliknya (KING)
+    let maxPayout = 0;
+    let kingClickId = "";
 
-    leadsData.forEach(l => {
-        const p = parseFloat(l.payout) || 0;
-        if (p >= maxPayoutFound) {
-            maxPayoutFound = p;
-            topClickId = l.click_id;
+    leadsData.forEach(item => {
+        const p = parseFloat(item.payout) || 0;
+        if (p > maxPayout) {
+            maxPayout = p;
+            kingClickId = item.click_id;
         }
     });
 
-    // Update Marquee High Payout
-    if (marqueeContainer && topClickId) {
-        marqueeContainer.innerHTML = `HIGH PAYOUT TODAY <span class="text-yellow-500">[ ${topClickId} ]</span> WITH $${maxPayoutFound.toFixed(2)}`;
+    // B. Update Marquee Text (Sesuai Class Kamu)
+    const marqueeTextEl = document.querySelector('.marquee-text');
+    if (marqueeTextEl && kingClickId) {
+        marqueeTextEl.innerHTML = `HIGH PAYOUT TODAY <span style="color:#eab308">[ ${kingClickId} ]</span> WITH <span style="color:#22c55e">$${maxPayout.toFixed(2)}</span> // NODE: ASIA-1 // STATUS: SECURE`;
     }
 
+    // C. Render Tabel
     mainTable.innerHTML = "";
     leadsData.forEach((data) => {
-        // MAHKOTA DIBERIKAN JIKA CLICK_ID NYA SAMA DENGAN TOP_CLICK_ID
-        const isKing = data.click_id === topClickId && maxPayoutFound > 0;
-        
+        // MAHKOTA: Diberikan ke SEMUA baris yang punya Click ID sama dengan Sang Raja
+        const isKing = (data.click_id === kingClickId && maxPayout > 0);
         const countryCode = (data.country || 'ID').toUpperCase();
+        
         const row = mainTable.insertRow();
         row.innerHTML = `
             <td class="p-3">
@@ -168,7 +162,7 @@ function updateTable() {
             <td class="text-gray-400 font-mono text-xs">${data.click_id}</td>
             <td>
                 <div class="flex items-center gap-2">
-                    <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6">
+                    <img src="https://flagicons.lipis.dev/flags/4x3/${countryCode.toLowerCase()}.svg" class="w-6 shadow">
                     <span class="text-xs font-bold opacity-80" style="color: var(--text)">${countryCode}</span>
                 </div>
             </td>
@@ -178,12 +172,12 @@ function updateTable() {
     });
 }
 
-// 5. HANDLE DATA & PUSHER
+// 4. LOGIKA DATA MASUK
 function handleData(data, type, isNew = false) {
     if (type === 'LEAD') {
         leadsData.unshift(data);
         if (leadsData.length > 50) leadsData.pop();
-        updateTable();
+        updateDisplay();
         if (isNew) announceLead(data.click_id, data.payout, data.country);
     } else if (type === 'CLICK') {
         const countryCode = (data.country || 'ID').toUpperCase();
@@ -203,21 +197,37 @@ function handleData(data, type, isNew = false) {
     }
 }
 
+// 5. AUTO RESET JAM 7
+setInterval(() => {
+    const now = new Date();
+    if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
+        leadsData = [];
+        mainTable.innerHTML = "";
+        stream.innerHTML = "";
+        const marqueeTextEl = document.querySelector('.marquee-text');
+        if (marqueeTextEl) marqueeTextEl.innerText = "NODE: ASIA-1 // STATUS: SECURE // LIVE MONITORING...";
+    }
+}, 1000);
+
+// 6. SYNC & PUSHER
 async function autoSync() {
     try {
-        const [resL, resC] = await Promise.all([fetch('/get-history?t=' + Date.now()), fetch('/get-clicks?t=' + Date.now())]);
+        const [resL, resC] = await Promise.all([
+            fetch('/get-history?t=' + Date.now()),
+            fetch('/get-clicks?t=' + Date.now())
+        ]);
         const leads = await resL.json();
         const clicks = await resC.json();
-        if (Array.isArray(leads)) { leadsData = leads.slice(0, 50); updateTable(); }
-        if (Array.isArray(clicks)) { 
-            if (stream.querySelectorAll('.type-CLICK').length < 5) clicks.reverse().forEach(c => handleData(c, 'CLICK', false));
+        if (Array.isArray(leads)) { leadsData = leads.slice(0, 50); updateDisplay(); }
+        if (Array.isArray(clicks)) {
+            const currentC = stream.querySelectorAll('.type-CLICK').length;
+            if (currentC < 5) clicks.reverse().forEach(c => handleData(c, 'CLICK', false));
         }
     } catch (e) {}
 }
 
-initPermissions();
 autoSync();
-setInterval(autoSync, 2000);
+setInterval(autoSync, 3000);
 
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
@@ -227,11 +237,11 @@ channel.bind('new-click', d => handleData(typeof d === 'string' ? JSON.parse(d) 
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 function toggleTheme() {
     document.body.classList.toggle('light-mode');
-    const isL = document.body.classList.contains('light-mode');
-    document.getElementById('sun-icon').classList.toggle('hidden', isL);
-    document.getElementById('moon-icon').classList.toggle('hidden', !isL);
 }
-document.addEventListener('click', () => { synth.speak(new SpeechSynthesisUtterance("")); }, {once: true});
+document.addEventListener('click', () => { 
+    initPermissions(); 
+    synth.speak(new SpeechSynthesisUtterance("")); 
+}, {once: true});
 </script>
 </body>
 </html>
