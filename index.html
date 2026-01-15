@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PHEI REALTIME 2026</title><link rel="icon" href="icon.png" type="image/png">
-<link rel="shortcut icon" href="icon.png" type="image/x-icon">
+    <title>PHEI REALTIME 2026</title>
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="shortcut icon" href="icon.png" type="image/x-icon">
+    
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,10 +15,27 @@
         .light-mode { --bg: #ffffff; --card: #f6f8fa; --text: #24292f; --border: #d0d7de; --sub-text: #57606a; }
         body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); color: var(--text); overflow: hidden; transition: 0.3s; }
         .font-rowx { font-family: 'Orbitron', sans-serif; }
+        
         nav { display: flex; align-items: center; padding: 0 24px; height: 75px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
-        .marquee-container { flex: 1; height: 100%; overflow: hidden; margin: 0 20px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); display: flex; align-items: center; }
-        .marquee-text { display: inline-block; animation: marquee 25s linear infinite; font-size: 11px; font-weight: 700; color: var(--sub-text); white-space: nowrap; }
-        @keyframes marquee { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+        
+        /* CSS MARQUEE SMOOTH */
+        .marquee-container { flex: 1; height: 100%; overflow: hidden; margin: 0 20px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); display: flex; align-items: center; position: relative; }
+        .marquee-text { 
+            display: inline-block; 
+            white-space: nowrap; 
+            position: absolute;
+            animation: marquee 20s linear infinite; 
+            font-size: 11px; 
+            font-weight: 700; 
+            color: var(--sub-text); 
+            padding-left: 100%;
+            will-change: transform;
+        }
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
         table { width: 100%; border-collapse: collapse; }
         th { background: var(--card); color: var(--sub-text); font-size: 10px; padding: 12px 24px; border-bottom: 2px solid var(--border); text-align: left; text-transform: uppercase; letter-spacing: 1px; }
         td { padding: 12px 24px; border-bottom: 1px solid var(--border); font-size: 13px; }
@@ -32,7 +51,9 @@
                 <span class="text-2xl font-bold font-rowx text-blue-500">R.O.W.X</span>
                 <span class="text-[7px] font-bold tracking-[0.2em] opacity-40">PHEI EDITION 2026</span>
             </div>
-            <div class="marquee-container"><div class="marquee-text uppercase" id="marquee-text">WAITING FOR DATA...</div></div>
+            <div class="marquee-container">
+                <div class="marquee-text uppercase" id="marquee-text">WAITING FOR DATA... // SYSTEM READY // NODE ASIA-1</div>
+            </div>
             <div class="flex items-center gap-4">
                 <div class="theme-box" onclick="toggleTheme()">
                     <svg id="sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5 block"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M6.364 6.364l.707.707m10.607 10.607l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z" stroke-width="2"></path></svg>
@@ -67,11 +88,10 @@ let leadsData = [];
 let clicksData = [];
 let currentView = 'live';
 
-// Ikon hanya untuk Performance
 const crownSvg = `<svg class="w-5 h-5 text-yellow-500 animate-bounce" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`;
 const userSvg = `<svg class="w-5 h-5 opacity-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
 
-// 2. FUNGSI HELPER (BENDERA & NOTIF)
+// 2. FUNGSI HELPER
 function getFlag(country) {
     if (!country) return 'id'; 
     let code = country.toLowerCase();
@@ -141,6 +161,7 @@ function updateDisplay() {
             const pValue = currentView === 'perf' ? d.total : parseFloat(d.payout);
             const row = mainTable.insertRow();
             
+            // Ikon hanya muncul di view Performance
             let iconHtml = (currentView === 'perf') ? (isKing ? crownSvg : userSvg) : "";
 
             row.innerHTML = `
@@ -165,7 +186,7 @@ function updateDisplay() {
         });
         
         const m = document.getElementById('marquee-text');
-        if(m && kingId) m.innerHTML = `🏆 TOP RECORD: <span class="text-yellow-500">${kingId}</span> // VALUE: <span class="text-green-500">$${topVal.toFixed(2)}</span> // STATUS: SECURE`;
+        if(m && kingId) m.innerHTML = `🏆 TOP RECORD: <span class="text-yellow-500">${kingId}</span> // VALUE: <span class="text-green-500">$${topVal.toFixed(2)}</span> // STATUS: SECURE & CONNECTED // NODE: ASIA-1`;
     } else {
         tableHead.innerHTML = `<tr><th width="40%">CLICK ID</th><th width="20%">COUNTRY</th><th width="20%">STATUS</th><th width="20%" class="text-right">TIME</th></tr>`;
         filterClicks();
@@ -184,7 +205,6 @@ function filterClicks() {
     });
 }
 
-// 4. DATA HANDLER (PUSHER)
 function handleData(data, type, isNew = false) {
     if (type === 'LEAD') {
         leadsData.unshift(data);
@@ -193,7 +213,6 @@ function handleData(data, type, isNew = false) {
         
         if (isNew) {
             sendSystemNotif(data.payout, data.click_id);
-            
             synth.cancel();
             const utter = new SpeechSynthesisUtterance(`Lead ${data.payout} dolar.`);
             utter.lang = 'id-ID';
@@ -210,7 +229,13 @@ function handleData(data, type, isNew = false) {
     }
 }
 
-// 5. SYSTEM CLOCK & AUTO RESET
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light-mode');
+    document.getElementById('sun-icon').classList.toggle('hidden', isLight);
+    document.getElementById('moon-icon').classList.toggle('hidden', !isLight);
+}
+
+// Reset Otomatis Jam 7 Pagi
 setInterval(() => {
     const now = new Date();
     if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
@@ -218,13 +243,6 @@ setInterval(() => {
     }
 }, 1000);
 
-function toggleTheme() {
-    const isLight = document.body.classList.toggle('light-mode');
-    document.getElementById('sun-icon').classList.toggle('hidden', isLight);
-    document.getElementById('moon-icon').classList.toggle('hidden', !isLight);
-}
-
-// 6. SYNC
 async function autoSync() {
     try {
         const [resL, resC] = await Promise.all([fetch('/get-history?t=' + Date.now()), fetch('/get-clicks?t=' + Date.now())]);
