@@ -45,7 +45,7 @@
                 <span class="text-[7px] font-bold tracking-[0.2em] opacity-40 uppercase">PHEI EDITION 2026</span>
             </div>
             <div class="marquee-container">
-                <div class="marquee-text uppercase" id="marquee-text">SYSTEM READY // SECURE CONNECTED</div>
+                <div class="marquee-text uppercase" id="marquee-text">SYSTEM READY // NODE ASIA-1 // SECURE CONNECTED</div>
             </div>
             <div class="flex items-center gap-4 shrink-0">
                 <div class="theme-box" onclick="toggleTheme()">
@@ -100,11 +100,12 @@ let currentView = 'live';
 
 const svgIcons = {
     bolt: `<svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`,
-    // PERFORMANCE - TROPHY SOLID
-    chart: `<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8L12 2zm0 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`,
-    // LIVE TRAFFIC - SIGNAL TOWER SOLID
+    // TROPHY SOLID - UNTUK HEADER PERFORMANCE
+    chart: `<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.66 4.43 4.94C9.45 12.05 11 14 11 14v5H7v2h10v-2h-4v-5s1.55-1.95 2.57-4.06C18.08 9.66 20 7.55 20 5V4c0-1.1-.9-2-2-2zM6 4h2v3H6V4zm12 3h-2V4h2v3z"/></svg>`,
     signal: `<svg class="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Zm0-9a9 9 0 0 0-9 9c0 2.48 1.01 4.72 2.65 6.34L3.5 22h17l-2.15-4.66A9 9 0 0 0 12 2Zm0 14a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>`,
     crown: `<svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>`,
+    // MEDAL SOLID - UNTUK LIST PERFORMANCE
+    medal: `<svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="2 2 20 20"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
     fire: `<svg class="w-4 h-4 text-[#fe3c72]" fill="currentColor" viewBox="0 0 24 24"><path d="M12.536 21.432a9.122 9.122 0 0 1-5.187-2.07c-3.153-2.535-3.321-7.143-1.464-10.12a.375.375 0 0 1 .632.023c.35 1.05.7 1.87 1.144 2.505.772 1.103 1.956 1.767 3.327 1.767 1.114 0 2.214-.42 2.768-1.574a4.07 4.07 0 0 0 .393-1.685c0-2.31-1.611-3.665-2.617-5.462a.362.362 0 0 1 .49-.49c4.28 1.914 6.945 6.007 6.945 9.778 0 4.283-2.924 7.338-6.431 7.338"/></svg>`
 };
 
@@ -153,7 +154,7 @@ function switchView(view) {
 
 function updateDisplay() {
     mainTable.innerHTML = "";
-    let grandTotal = 0;
+    let kingId = "", topVal = 0, grandTotal = 0;
     const perfMap = {};
     
     leadsData.forEach(l => {
@@ -166,21 +167,31 @@ function updateDisplay() {
 
     totalEarningsEl.innerText = `$${grandTotal.toFixed(2)}`;
     
-    // LOGIKA 1000+ CLICKS
-    const totalCount = clicksData.length;
-    totalClicksEl.innerText = totalCount > 1000 ? "1000+" : totalCount;
+    // FIX CLICKS MAX 1000+
+    const clickCount = clicksData.length;
+    totalClicksEl.innerText = clickCount > 1000 ? "1000+" : clickCount;
+
+    const sortedPerf = Object.values(perfMap).sort((a,b) => b.total - a.total);
+    if(sortedPerf.length > 0) { 
+        kingId = sortedPerf[0].click_id; 
+        topVal = sortedPerf[0].total; 
+        // FIX MARQUEE HIGH PAYOUT
+        marqueeEl.innerHTML = `🏆 HIGH PAYOUT: <span class="text-yellow-500 font-bold">${kingId}</span> ($${topVal.toFixed(2)}) // STATUS: SECURE // NODE ASIA-1 // SECURE CONNECTED`;
+    }
 
     if (currentView === 'live') {
-        tableHead.innerHTML = `<tr><th class="w-[20%]">USER</th><th class="w-[30%]">CLICK ID</th><th class="w-[20%]">COUNTRY</th><th class="w-[15%] text-center">TIME</th><th class="w-[15%] text-right">PAYOUT</th></tr>`;
+        tableHead.innerHTML = `<tr><th class="w-[20%]">TEAM</th><th class="w-[30%]">CLICK ID</th><th class="w-[20%]">COUNTRY</th><th class="w-[15%] text-center">TIME</th><th class="w-[15%] text-right">PAYOUT</th></tr>`;
         leadsData.forEach(d => {
             const row = mainTable.insertRow();
-            row.innerHTML = `<td class="w-[20%] p-4 font-bold text-blue-500 uppercase">${d.oid||'USR'}</td><td class="w-[30%] font-mono text-xs opacity-70 truncate">${d.click_id}</td><td class="w-[20%]"><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow"><span class="text-sm font-bold uppercase">${d.country||'ID'}</span></div></td><td class="w-[15%] text-center text-[10px] opacity-50">${new Date(d.timestamp).toLocaleTimeString()}</td><td class="w-[15%] text-right font-bold text-green-500">$${parseFloat(d.payout).toFixed(2)}</td>`;
+            row.innerHTML = `<td class="w-[20%] p-4 font-bold text-blue-500 uppercase">${d.oid||'USR'}</td><td class="w-[30%] font-mono text-xs text-[var(--text)] opacity-70 truncate">${d.click_id}</td><td class="w-[20%]"> <div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(d.country)}.svg" class="w-5 shadow"><span class="text-sm font-bold uppercase">${d.country||'ID'}</span></div></td><td class="w-[15%] text-center text-[10px] opacity-50">${new Date(d.timestamp).toLocaleTimeString()}</td><td class="w-[15%] text-right font-bold text-green-500">$${parseFloat(d.payout).toFixed(2)}</td>`;
         });
     } else if (currentView === 'perf') {
         tableHead.innerHTML = `<tr><th class="w-[50%]">CLICK ID</th><th class="w-[25%] text-center">INFO</th><th class="w-[25%] text-right">PAYOUT</th></tr>`;
-        Object.values(perfMap).sort((a,b) => b.total - a.total).forEach(d => {
+        sortedPerf.forEach(d => {
+            const isKing = d.click_id === kingId;
             const row = mainTable.insertRow();
-            row.innerHTML = `<td class="w-[50%] p-4"><div class="flex items-center gap-3">${svgIcons.crown}<span class="font-mono text-xs text-[var(--text)] opacity-70">${d.click_id}</span></div></td><td class="w-[25%] text-center text-[10px] font-bold uppercase">${d.count} LEADS</td><td class="w-[25%] text-right font-bold text-green-500">$${d.total.toFixed(2)}</td>`;
+            // FIX ICON PERFORMANCE: King = Mahkota, Lainnya = Medal (Bukan bintang)
+            row.innerHTML = `<td class="w-[50%] p-4"><div class="flex items-center gap-3">${isKing ? svgIcons.crown : svgIcons.medal}<span class="font-mono text-xs ${isKing ? 'text-yellow-500 font-bold' : 'text-[var(--text)] opacity-70'}">${d.click_id}</span></div></td><td class="w-[25%] text-center text-[10px] font-bold uppercase">${d.count} LEADS</td><td class="w-[25%] text-right font-bold text-green-500">$${d.total.toFixed(2)}</td>`;
         });
     } else {
         tableHead.innerHTML = `<tr><th class="w-[40%]">CLICK ID</th><th class="w-[20%]">COUNTRY</th><th class="w-[20%]">STATUS</th><th class="w-[20%] text-right">TIME</th></tr>`;
@@ -195,29 +206,24 @@ function filterClicks() {
     clicksData.forEach(c => {
         if(c.click_id.toLowerCase().includes(s) || (c.country||'').toLowerCase().includes(s)) {
             const row = mainTable.insertRow();
-            row.innerHTML = `<td class="w-[40%] p-4 font-mono text-xs text-blue-400">${c.click_id}</td><td class="w-[20%]"><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(c.country)}.svg" class="w-5"><span class="text-sm font-bold uppercase">${c.country||'ID'}</span></div></td><td class="w-[20%]"><span class="text-[9px] bg-[#fe3c72]/10 text-[#fe3c72] px-2 py-0.5 rounded flex items-center gap-1 w-fit font-bold">${svgIcons.fire} CLICKED</span></td><td class="w-[20%] text-right text-[10px] opacity-40">${new Date().toLocaleTimeString()}</td>`;
+            row.innerHTML = `<td class="w-[40%] p-4 font-mono text-xs text-blue-400">${c.click_id}</td><td class="w-[20%]"><div class="flex items-center gap-2"><img src="https://flagicons.lipis.dev/flags/4x3/${getFlag(c.country)}.svg" class="w-5"><span class="text-sm font-bold uppercase">${c.country||'ID'}</span></div></td><td class="w-[20%]"><span class="text-[9px] bg-[#fe3c72]/10 text-[#fe3c72] px-2 py-0.5 rounded flex items-center gap-1 w-fit font-bold">${svgIcons.fire} REDIRECT</span></td><td class="w-[20%] text-right text-[10px] opacity-40">${new Date().toLocaleTimeString()}</td>`;
         }
     });
 }
 
-function handleData(data, type) {
+function handleData(data, type, isNew = false) {
+    // FIX PUSHER DATA INCOMING
+    const payload = typeof data === 'string' ? JSON.parse(data) : data;
     if (type === 'LEAD') {
-        leadsData.unshift(data); if (leadsData.length > 500) leadsData.pop();
+        leadsData.unshift(payload); if (leadsData.length > 500) leadsData.pop();
+        updateDisplay(); 
+        if (isNew) {
+            fetch(`https://api.telegram.org/bot8294616704:AAF7M8RQkNKdkJeNvVdeGFG7zrU26vo7sao/sendMessage?chat_id=-1002258281914&text=${encodeURIComponent('🔥 *LEAD MASUK!* 🔥\n\n🆔 ID: `' + payload.click_id + '` \n💰 Payout: $' + payload.payout)}&parse_mode=Markdown`).catch(e => {});
+        }
     } else {
-        clicksData.unshift(data); if (clicksData.length > 1001) clicksData.pop();
+        clicksData.unshift(payload); if (clicksData.length > 1005) clicksData.pop();
+        if(currentView === 'traffic' || leadsData.length === 0) updateDisplay();
     }
-    updateDisplay();
-}
-
-async function autoSync() {
-    try {
-        const [resL, resC] = await Promise.all([fetch('/get-history?t=' + Date.now()), fetch('/get-clicks?t=' + Date.now())]);
-        const l = await resL.json(); const c = await resC.json();
-        if (Array.isArray(l)) leadsData = l;
-        // FIX SIMPAN DATA: Merge agar tidak hilang
-        if (Array.isArray(c)) clicksData = c;
-        updateDisplay();
-    } catch (e) {}
 }
 
 function toggleTheme() {
@@ -226,13 +232,29 @@ function toggleTheme() {
     document.getElementById('moon-icon').classList.toggle('hidden', !isLight);
 }
 
+setInterval(() => {
+    const now = new Date();
+    if (now.getHours() === 7 && now.getMinutes() === 0 && now.getSeconds() === 0) {
+        leadsData = []; clicksData = []; updateDisplay();
+    }
+}, 1000);
+
+async function autoSync() {
+    try {
+        const [resL, resC] = await Promise.all([fetch('/get-history?t=' + Date.now()), fetch('/get-clicks?t=' + Date.now())]);
+        const l = await resL.json(); const c = await resC.json();
+        if (Array.isArray(l)) leadsData = l;
+        if (Array.isArray(c)) clicksData = c;
+        updateDisplay();
+    } catch (e) {}
+}
+
 const pusher = new Pusher('6bc0867b80098f3e3424', { cluster: 'ap1' });
 const channel = pusher.subscribe('my-channel');
-channel.bind('new-lead', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'LEAD'));
-channel.bind('new-click', d => handleData(typeof d === 'string' ? JSON.parse(d) : d, 'CLICK'));
+channel.bind('new-lead', d => handleData(d, 'LEAD', true));
+channel.bind('new-click', d => handleData(d, 'CLICK', false));
 
-autoSync();
-setInterval(autoSync, 30000); 
+autoSync(); setInterval(autoSync, 15000);
 switchView('live');
 </script>
 </body>
